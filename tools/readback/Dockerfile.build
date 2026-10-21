@@ -1,0 +1,4 @@
+FROM antenna-rig-readback:20261021
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends curl ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN curl -fLsS https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_Linux_64bit.tar.gz -o /tmp/arduino-cli.tar.gz && tar -xzf /tmp/arduino-cli.tar.gz -C /usr/local/bin arduino-cli && rm /tmp/arduino-cli.tar.gz
+RUN arduino-cli core update-index && arduino-cli core install arduino:avr

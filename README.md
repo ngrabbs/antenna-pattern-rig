@@ -5,13 +5,19 @@ Longruner 17HD48002H-22B stepper, and LPD3806-600BM-5G-24C incremental encoder.
 RF instrument: NanoVNA-F V2; other instrument models are not yet recorded.
 
 **Status:** planning and encoder diagnostic firmware. No motor-control or RF
-instrument automation is implemented yet. The encoder diagnostic has not been
-uploaded or tested on hardware. On 2026-10-21 the existing Uno rotor firmware was
+instrument automation is implemented yet. On 2026-10-21 the encoder diagnostic was
+built in Docker, uploaded and verified, then tested by hand on the bare Uno:
+both directions counted, no invalid transitions were observed, and the final
+10-second stationary window showed no count drift. The manually indexed turn
+registered -2381 counts and the return ended at -10; exact scale and angle
+accuracy remain unverified. See [first encoder test](docs/encoder-test-2026-10-21.md).
+Before that upload, the existing Uno rotor firmware was
 read successfully in Docker: two complete flash images matched, and a HEX copy
-was validated. No write/erase commands were issued. EEPROM and restoration remain
-unverified; see [readback record](docs/readback-2026-10-21.md). Purple driver modules
-are present but their IC model and microstep
-configuration are unconfirmed. No license has been selected yet.
+was validated. That readback used no write/erase commands. The original program
+is now preserved as private backups; the Uno currently runs the encoder diagnostic.
+EEPROM and restoration remain unverified; see [readback record](docs/readback-2026-10-21.md).
+The driver photo shows R250 sense resistors; DRV8825 identity is provisional and
+microstep/current settings remain unconfirmed. No license has been selected yet.
 
 ## Starting resolution
 
@@ -38,6 +44,7 @@ parts. Encoder line-spacing accuracy has not been established.
 
 - [Hardware and wiring](docs/hardware.md): existing firmware, proposed pins,
   driver identification, and mechanical constraints.
+- [Encoder bench procedure](docs/encoder-test.md) and [first test results](docs/encoder-test-2026-10-21.md).
 - [Accuracy and calibration](docs/accuracy.md): error budget, distance geometry,
   laser calibration, and reduction ratios.
 - [Measurement procedure](docs/measurement.md): stop/settle/measure, range
@@ -47,6 +54,7 @@ parts. Encoder line-spacing accuracy has not been established.
 - [Validation](docs/validation.md): tests performed and remaining hardware checks.
 - `firmware/encoder_monitor/`: x4 encoder diagnostic; no step pulses.
 - `tools/geometry.py`: offline resolution and alignment calculations; no hardware I/O.
+- `tools/capture_encoder.py`: serial capture and live JSON status; pyserial in Docker.
 - `data/run-template.json`: metadata template, with unknowns left null.
 
 ## Offline calculations

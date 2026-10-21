@@ -37,3 +37,13 @@ Docker AVRDUDE identified ATmega328P and read the full 32768-byte flash twice;
 the images matched. Intel HEX was independently decoded and matched every byte.
 See [readback record](readback-2026-10-21.md). This does not validate the diagnostic
 sketch, motion, encoder wiring, EEPROM contents, or restoration.
+
+## Subsequent encoder bring-up, 2026-10-21
+
+The unchanged encoder diagnostic source was compiled in Docker on the Linux host
+with Arduino AVR core 1.8.8, uploaded to the bare Uno, and verified by AVRDUDE:
+4604 flash bytes. The original rotor image remains in private backups. A hand-turn
+test captured 1449 valid samples with no invalid transitions; the final 10 seconds
+remained at -10 counts. Manual turn/return endpoints were -2381 and -10 counts,
+so this is a functional bring-up result, not an exact scale or accuracy calibration.
+See [test record](encoder-test-2026-10-21.md). No motor was powered or driven.

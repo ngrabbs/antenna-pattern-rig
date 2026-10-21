@@ -4,11 +4,11 @@
 
 | Part | Known | Still to establish |
 | --- | --- | --- |
-| Arduino Uno | Existing satellite-rotor firmware installed | Original source, protocol, calibration, backup |
+| Arduino Uno | Original rotor flash backed up; encoder diagnostic now installed and upload-verified | Original source, EEPROM calibration, restoration |
 | CNC shield | V3.0 | Clone pinout, populated axis, A-axis clone jumpers |
-| Driver | Purple carrier board | Chip identity, sense resistors, current limit, microstep jumpers |
+| Driver | Purple carrier; user reads V8825; photo shows two R250 sense resistors | Confirm full chip identity, measured VREF/current limit, microstep jumpers |
 | Motor | Longruner 17HD48002H-22B | Confirm its own label/ratings and coil pairing |
-| Encoder | LPD3806-600BM-5G-24C | Own wiring sheet, actual cycles/revolution, electrical output |
+| Encoder | LPD3806-600BM-5G-24C; basic 5 V hand-turn test completed on bare Uno | Precisely indexed counts/revolution, noise immunity, mounted repeatability |
 | Coupling | Printed motor/encoder mount under construction | Shaft alignment, stiffness, slip, backlash |
 
 A Zyltech sheet for the same motor part number lists 1.8 degrees, 1.7 A/phase,
@@ -18,13 +18,42 @@ load. Confirm coil pairs with an ohmmeter rather than relying on wire colors.
 
 ## Preserve the current rig
 
-Do not upload the diagnostic sketch until the working firmware has been backed
-up and the rewiring is deliberate. Existing firmware might already support useful
+The original rotor flash was backed up and verified before the encoder diagnostic
+was uploaded. Preserve those backups. The original rotor firmware might support useful
 serial rotor commands, but its protocol must be identified rather than guessed.
 Opening a serial port commonly resets an Uno and can trigger startup motion;
 remove motor power before probing it. See firmware-backup.md.
 
-## Proposed diagnostic wiring (NOT compatible with arbitrary existing firmware)
+## First encoder test: bare Uno
+
+For the first manual encoder test, the CNC shield is separate from the Uno and
+unpowered. Disconnect USB before wiring; leave the motor supply disconnected.
+For the stated encoder model, the published connection table is:
+
+| Encoder conductor | Bare Uno connection | Function |
+| --- | --- | --- |
+| Red | 5V | Encoder supply, not VIN or a motor supply |
+| Black | GND | Supply and signal return |
+| Green | D2 | A phase |
+| White | D3 | B phase |
+| Braided shield/drain | Insulated for initial bench test | Not another signal or supply wire |
+
+These match the user's reported conductor colors and the connection table in
+[the original encoder application paper](https://eprints.covenantuniversity.edu.ng/18650/1/Oguntosin_2019_J._Phys.__Conf._Ser._1299_012108.pdf).
+The actual unit's own labeling takes priority. A/B color variants would reverse
+the reported sign; power polarity must be correct. The sketch's internal pull-ups
+support an initial slow hand-turn test. Use external ~4.7k pull-ups to 5 V for
+stronger edges if needed; never pull inputs to 12/24 V. For later noise control,
+terminate the cable braid appropriately at the controller end.
+
+Reconnect USB only after checking connections. Monitor at 115200 baud. Mark a
+shaft reference, send `z`, turn one measured mechanical revolution slowly, and
+expect approximately +2400 or -2400 counts (360 degrees in magnitude). Reverse
+to the mark and check closure. Count drift at rest and invalid transitions should
+ideally be zero. A count alone does not prove the reference mark was a full turn.
+See [encoder bench procedure](encoder-test.md).
+
+## Proposed shield diagnostic wiring (NOT compatible with arbitrary existing firmware)
 
 The diagnostic sketch uses Uno D2 and D3 for external interrupts. On the common
 V3 shield mapping, these are ALSO the X and Y STEP signals. Consequently:
@@ -63,6 +92,31 @@ chip identity. DRV8825 supports up to 1/32; A4988 up to 1/16. The same three
 HIGH mode inputs mean different maximum subdivision on those two drivers.
 Read the IC marking and inspect jumpers before setting software steps/revolution.
 Confirm by comparing commanded pulses against an independently observed revolution.
+
+### Observations from 2026-10-21 driver photograph
+
+- The two large resistors next to the adjustment pot are marked **R250**:
+  0.25 ohm each, normally one sense resistor per phase, not a parallel pair.
+- The user reports the chip marking looks like **V8825**. This is consistent with
+  DRV8825, but the full marking is not legible in the photograph. Identification
+  remains provisional.
+- Assuming DRV8825 and the usual direct VREF circuit, TI specifies
+  `I_limit = VREF / (5 * R_sense)`. For 0.25 ohm this becomes
+  `I_limit[A] = VREF[V] / 1.25`, or `VREF[V] = 1.25 * I_limit[A]`.
+
+| Full-scale phase current limit | VREF at the IC reference input |
+| --- | --- |
+| 0.8 A | 1.00 V |
+| 1.0 A | 1.25 V |
+| 1.2 A | 1.50 V |
+
+An initial 0.8 A / 1.00 V setting was proposed for low-load motor tests; it has
+NOT been measured or applied. This is the full-scale chopping current setting,
+not DC supply current or a guaranteed current at every microstep. The common
+`I = 2 * VREF` shortcut applies to 0.10-ohm boards and does not apply here.
+Measure at a verified VREF point relative to driver ground; do not assume an
+unidentified pot's metal adjuster is electrically the VREF node. Wiring and module
+insertion/removal require power off. See [TI DRV8825 datasheet, section 8.3.2](https://www.ti.com/lit/ds/symlink/drv8825.pdf#page=12).
 
 Set current limits using the actual driver's sense resistance and documentation;
 a VREF formula for a different clone may be wrong. Supply current is not coil
