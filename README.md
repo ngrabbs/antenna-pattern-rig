@@ -14,7 +14,9 @@ to address harsh full steps. Firmware v6 completed its first mounted 1/16-step c
 of -180.00 and 0.00 degrees; the user reported much smoother motion. Antenna pointing
 accuracy is not calibrated. Firmware boots
 disabled and requires explicit setup and commands. See [motor guide](docs/motor-jog.md).
-RF instrument capture and automatic antenna-pattern acquisition are not implemented. Earlier on
+A first exploratory 2400 MHz moving RF scan has been captured with LibreSDR TX
+and tinySA Ultra RX; see [plot and limits](results/2026-10-21-rf-quick/README.md).
+General stop-and-measure pattern acquisition remains future work. Earlier on
 2026-10-21 the encoder diagnostic was
 built in Docker, uploaded and verified, then tested by hand on the bare Uno:
 both directions counted, no invalid transitions were observed, and the final

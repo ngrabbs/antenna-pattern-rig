@@ -1,7 +1,10 @@
 # RF measurement procedure and future automation
 
-No instrument-control integration is implemented in this repository yet. Identify
-the RF source/receiver models and their actual protocols before adding adapters.
+A first exploratory moving scan is implemented in `tools/rf/`: finite LibreSDR
+B210-compatible tone generation, tinySA Ultra acquisition and offline plots. See
+[the first result](../results/2026-10-21-rf-quick/README.md). General stopped-angle
+acquisition remains future work. Identify RF source/receiver models and their
+actual protocols before adding adapters.
 For the NanoVNA-F V2, verify commands against SYSJOINT documentation/firmware;
 do not assume every NanoVNA clone uses an identical serial protocol.
 

@@ -1,0 +1,34 @@
+{
+  "frequency_hz": 2400000000,
+  "angle_reference": "relative start; not antenna boresight",
+  "estimator": "maximum of 2399975000/2400000000/2400025000 Hz bins; 30 kHz RBW",
+  "baseline_p95_dbm": -92.25625,
+  "normalization_peak_dbm": -77.03125,
+  "scan_duration_median_s": 0.30054986476898193,
+  "observed_angle_span_max_deg": 1.7581740688366778,
+  "samples": {
+    "1": 177,
+    "2": 179
+  },
+  "angular_coverage_deg": {
+    "1": [
+      0.22914033183320964,
+      179.85
+    ],
+    "2": [
+      -0.0,
+      179.85
+    ]
+  },
+  "common_2deg_bins": 91,
+  "bins_both_above_background_plus_6db": 67,
+  "direction_difference_median_db": 0.65625,
+  "motor_endpoint_counts": {
+    "outward": -1199,
+    "home": 0,
+    "post_disable": 0
+  },
+  "completed_utc": "2026-10-21T21:34:36.090059+00:00",
+  "motion_fault": 0,
+  "invalid_encoder_transitions": 0
+}
