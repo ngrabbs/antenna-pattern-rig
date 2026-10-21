@@ -60,6 +60,14 @@ Firmware v2 adds explicit `TICK`: one full step, a one-second observation interv
 then automatic disable with the existing guards retained. Native tests cover
 positive/negative encoder response, delayed response, no-response failure, full-step
 interlock, one-shot reference invalidation, heartbeat and invalid-transition stops.
-Physical TICK results are pending; no cause for the powered-motion discrepancy
-has yet been established. A spare driver that reportedly remained at 9 mV VREF
+The first physical TICK test (19:05 UTC / 14:05 CDT) commanded one software-counted
+full step. Encoder displacement remained zero through the one-second energized
+observation interval; invalid transitions remained zero. The controller then
+disabled with fault 2 and `done=0`. Thus the discrepancy also occurs with an
+isolated step given time to settle, rather than only during the multi-step probe.
+This does not distinguish a missing driver output, wiring fault, mechanical
+problem, or a motor/encoder response problem; the software counter alone does
+not verify the physical pulse or angular displacement in this particular run.
+No cause for the powered-motion discrepancy has yet been established.
+A spare driver that reportedly remained at 9 mV VREF
 was not qualified and is not evidence of a confirmed replacement test.
