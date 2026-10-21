@@ -21,6 +21,13 @@ holding torque or software step counts as verified antenna rotation.
 - User confirmed holding torque, firm 1:1 encoder coupling, and motor twitching
   during attempts. Bench supply reportedly remained in constant-voltage mode.
 
+**Correction from the later assembly photo:** the coupling is a rubber band
+around two bare shafts. The earlier report of firm 1:1 coupling was not proof of
+rigid angular transfer. Shaft diameter ratio, band stretch and slip are unqualified.
+The user also reports seeing a motor step during the zero-count TICK test. Thus
+the powered encoder discrepancy cannot, on its own, diagnose a motor/driver fault.
+The assistant's earlier rigid-coupling assumption overstated what was established.
+
 ## Encoder and motion observations
 
 An approximate manual quarter turn of the coupled motor shaft changed the
@@ -71,3 +78,11 @@ not verify the physical pulse or angular displacement in this particular run.
 No cause for the powered-motion discrepancy has yet been established.
 A spare driver that reportedly remained at 9 mV VREF
 was not qualified and is not evidence of a confirmed replacement test.
+
+Firmware v3 adds a separate BELTTEST: fixed 20 full steps (36 nominal motor
+degrees), recording encoder response without the rigid 1:1 following test. It
+retains independent stop/heartbeat/invalid-transition/travel/time guards and
+automatically disables after observation. Native tests cover zero motion and
+both encoder polarities, a fixed target, one-second observation, automatic disable,
+configuration/reference interlocks, STOP, heartbeat, encoder invalidity, travel
+and move timeout. Physical BELTTEST results remain pending.

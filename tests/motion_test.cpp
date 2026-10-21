@@ -34,6 +34,31 @@ int main() {
   assert(parse("STOP").command == STOP);
   assert(parse("TICK").command == TICK);
   assert(parse("TICK 1").command == INVALID);
+  assert(parse("BELTTEST").command == BELTTEST);
+  assert(parse("BELTTEST 50").command == INVALID);
+  for (int observed : {0, 1, -1}) {
+    Guard g; ready(g); assert(!g.belt(700)); assert(g.target == 20 && g.diagnosticMode() == 2);
+    for (int step=1; step<=20; ++step) {
+      uint32_t now=700+step*400; g.ping(now);
+      g.update(now, step*10*observed, 0, step, step==20);
+      assert(g.armed && g.fault==OK);
+    }
+    g.ping(9699); g.update(9699, 200*observed, 0, 20, true); assert(g.armed);
+    g.ping(9700); g.update(9700, 200*observed, 0, 20, true);
+    assert(!g.armed && g.phase==DISABLED && g.completed==1 && !g.sign && !g.referenced);
+    assert(g.belt(9701));
+  }
+  { Guard g; assert(g.belt(0)); ready(g,8); assert(g.belt(700)); }
+  { Guard g; ready(g); assert(!g.belt(700)); g.ping(800); g.update(800,334,0,1,false);
+    assert(!g.armed && g.fault==TRAVEL); }
+  { Guard g; ready(g); assert(!g.belt(700)); g.update(2801,0,0,1,false);
+    assert(!g.armed && g.fault==COMM_TIMEOUT); }
+  { Guard g; ready(g); assert(!g.belt(700)); g.ping(800); g.update(800,0,1,1,false);
+    assert(!g.armed && g.fault==BAD_ENCODER); }
+  { Guard g; ready(g); assert(!g.belt(700)); g.ping(15701); g.update(15701,0,0,1,false);
+    assert(!g.armed && g.fault==MOVE_TIMEOUT); }
+  { Guard g; ready(g); assert(!g.belt(700)); g.stop();
+    assert(!g.armed && g.phase==DISABLED && g.belt(701)); }
   for (int polarity : {-1, 1}) {
     Guard g; ready(g); assert(!g.tick(700)); assert(g.target == 1);
     g.ping(1000); g.update(1000, 0, 0, 1, true);

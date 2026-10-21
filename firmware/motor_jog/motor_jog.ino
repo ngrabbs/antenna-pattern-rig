@@ -51,6 +51,7 @@ void status() {
   Serial.print(F(",\"bad\":")); Serial.print(guard.invalid);
   Serial.print(F(",\"fault\":")); Serial.print((int)guard.fault);
   Serial.print(F(",\"done\":")); Serial.print(guard.completed);
+  Serial.print(F(",\"diag\":")); Serial.print(guard.diagnosticMode());
   Serial.println('}');
 }
 void dispatch(const char* line) {
@@ -75,6 +76,7 @@ void dispatch(const char* line) {
       break;
     case rig::PROBE: error = guard.probe(now); break;
     case rig::TICK: error = guard.tick(now); break;
+    case rig::BELTTEST: error = guard.belt(now); break;
     case rig::JOG: error = guard.jog(request.value, now); break;
     case rig::STOP: guard.stop(); disableImmediately(); break;
     case rig::CLEAR: error = guard.clear(); break;
@@ -97,7 +99,7 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(3), encoderEdge, CHANGE);
   motor.setMinPulseWidth(3);
   Serial.begin(115200);
-  Serial.println(F("{\"boot\":\"motor_jog_v2_disabled\"}"));
+  Serial.println(F("{\"boot\":\"motor_jog_v3_disabled\"}"));
 }
 void loop() {
   uint8_t budget = 32;

@@ -6,6 +6,11 @@ encoder D2/D3 takeoffs. It assumes a 200-full-step motor and a 600-cycle encoder
 mechanically coupled 1:1. It emits step commands and supervises the encoder;
 it does not apply automatic position corrections, home the axis or acquire RF data.
 
+The October 21 assembly was subsequently shown to use a rubber band around bare
+motor/encoder shafts, rather than a rigid 1:1 coupling. Normal PROBE/JOG tracking
+has not been qualified for that transmission. Use the separately bounded
+BELTTEST diagnostic to observe it; its completion does not establish pointing.
+
 ## Hardware setup
 
 Disconnect USB and motor supply before installing a module or moving motor leads.
@@ -51,6 +56,7 @@ Commands are uppercase, one per newline at 115200 baud:
 | `ZERO` | Set a relative reference after >=500 ms armed and >=250 ms with no encoder change |
 | `PROBE` | One +9-degree nominal move to determine encoder polarity; requires a fresh ZERO |
 | `TICK` | Diagnostic: CONFIG 1 only, fresh ZERO required; command one +1.8-degree full step, observe for at least 1 second after the last pulse, then disable automatically |
+| `BELTTEST` | Diagnostic: CONFIG 1 and fresh ZERO only; 20 full steps (36 nominal motor degrees), record encoder without enforcing 1:1 tracking, observe for 1 second, disable automatically |
 | `JOG -9` | Relative jog, up to 9 degrees magnitude; requires successful PROBE |
 | `STOP` or `!` | Immediately cancel step generation and disable coils; invalidate reference |
 | `CLEAR` | Clear a latched fault while disabled; does not arm |
@@ -78,7 +84,21 @@ no fault. Otherwise it disables with a following or settling fault. Inspect the
 recorded encoder displacement; this tolerance is a diagnostic acceptance bound,
 not a claim of pointing accuracy. Early STOP or any other fault can shorten the
 observation. Every attempt requires ARM and a fresh ZERO; no repeat is automatic.
-Firmware boot identification is now `motor_jog_v2_disabled`.
+Firmware boot identification is now `motor_jog_v3_disabled`.
+
+`BELTTEST` explicitly bypasses only expected motor-versus-encoder displacement
+checks for this unqualified elastic transmission. It never learns sign or enables
+normal jogs. Its fixed target is 20 pulses at CONFIG 1, using the existing nominal
+5-degree/s speed and 10-degree/s-squared acceleration (about 8 seconds of motion).
+Heartbeat, STOP, invalid transitions, 50-degree nominal encoder excursion, 15-second
+movement timeout and 1.5-second settling timeout remain active. After the target,
+it requires at least 1 second observation and 250 ms quiet, then increments `done`
+and disables regardless of encoder displacement. That `done` indicates completion
+of the diagnostic command only, including when the band slips or encoder stays
+still. Telemetry `diag`: 0 ordinary, 1 TICK, 2 BELTTEST. A new ARM resets diagnostic
+mode; each diagnostic requires a fresh ZERO. Inspect visible shaft marks and
+recorded counts to assess whether motion was transferred. No antenna load should
+be attached during this bench test.
 
 ## Bounds and faults
 
