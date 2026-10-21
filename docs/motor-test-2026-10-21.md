@@ -167,4 +167,33 @@ retained zero across reversal, endpoint observation periods, automatic disable,
 full-step/reference interlocks, travel bounds, watchdog, invalid transitions,
 movement/settling timeouts and STOP preventing an automatic return. This diagnostic
 has separate explicit encoder/command travel and time bounds documented in
-motor-jog.md; it does not relax normal jog guards. Physical sweep results are pending.
+motor-jog.md; it does not relax normal jog guards.
+
+## First 180-degree outward-and-return result
+
+The user enabled motor power and the complete cycle ran from approximately
+19:29:19 to 19:30:35 UTC (14:29 to 14:30 CDT), about 75.5 seconds between the
+first sweep telemetry and the first completed sample. The motor software counter
+went from 0 to -100 full steps and back to 0. The same encoder zero was retained
+throughout. Both endpoints were observed while energized before recording.
+
+| Measurement | Commanded motor travel | Encoder travel | Apparent shortfall |
+| --- | ---: | ---: | ---: |
+| Outward | -180 degrees | -1161 counts = -174.15 degrees | 5.85 degrees / 3.25% |
+| Return leg | +180 degrees | +1178 counts = +176.70 degrees | 3.30 degrees / 1.83% |
+
+At commanded motor step zero, the captured pre-disable residual was +17 encoder
+counts (+2.55 degrees). The driver then disabled automatically with `done=1`,
+`leg=3`, `fault=0`, `bad=0`. Subsequent disabled readings reached +19 counts
+(+2.85 degrees) by 19:31:09 UTC. This additional 0.30 degree relaxation is distinct
+from the recorded endpoint residual. Raw logs, live snapshots, endpoint data and
+numeric summary are retained privately in the run-06 data directory.
+
+The percentages compare nominal encoder angle with commanded motor angle, assuming
+the reported equal pulleys. They are not isolated friction-slip measurements:
+actual motor angle was not independently referenced. Effective pulley ratio,
+elastic storage, mechanical slip, motor error and encoder uncertainty remain
+possible contributors. The different outward/return discrepancies, nonzero
+closure residual and prior variable increments do not justify applying one fixed
+slip correction. This cycle measures disagreement and return residual; it is not
+a demonstration of an accurately homed antenna or a qualified feedback controller.
