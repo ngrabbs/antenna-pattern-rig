@@ -19,6 +19,13 @@ EEPROM and restoration remain unverified; see [readback record](docs/readback-20
 The driver photo shows R250 sense resistors; DRV8825 identity is provisional and
 microstep/current settings remain unconfirmed. No license has been selected yet.
 
+The subsequent [encoder-through-shield test](docs/encoder-shield-test-2026-10-21.md)
+passed a basic functional check after continuity-confirmed D2/D3 takeoffs were
+used: 2399 counts for a manually indexed revolution, +3 counts on return, zero
+invalid transitions, and no final stationary drift. The initial photo-based
+takeoff instructions are superseded by the measured connections documented in
+[hardware notes](docs/hardware.md#actual-shield-takeoffs-continuity-check-2026-10-21).
+
 ## Starting resolution
 
 Assuming 200 full motor steps/revolution, direct drive, and 600 encoder cycles per

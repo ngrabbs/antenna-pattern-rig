@@ -47,3 +47,15 @@ test captured 1449 valid samples with no invalid transitions; the final 10 secon
 remained at -10 counts. Manual turn/return endpoints were -2381 and -10 counts,
 so this is a functional bring-up result, not an exact scale or accuracy calibration.
 See [test record](encoder-test-2026-10-21.md). No motor was powered or driven.
+
+## Encoder through CNC shield, 2026-10-21
+
+Initial shield takeoffs gave 2035 samples with no count changes despite a reported
+physical revolution and a measured 5 V encoder supply. After the user identified
+D2/D3 by continuity in the blue X/Y-labeled block below the STEP/DIR header and
+moved the signal wires, the unchanged firmware reported 2399 counts for one
+manually indexed turn and +3 counts on return (user overshot and corrected).
+Across 1124 parsed samples, invalid transitions stayed zero and timestamps were
+strictly increasing. The final 10 seconds stayed at +3 counts. All driver sockets
+were empty, the EN/GND shunt was removed, and motor power was disconnected.
+See [shield test record](encoder-shield-test-2026-10-21.md).

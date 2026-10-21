@@ -65,6 +65,35 @@ V3 shield mapping, these are ALSO the X and Y STEP signals. Consequently:
 - Before a future powered-motion test, confirm Z STEP D4 and Z DIR D7 by checking
   the actual shield. The diagnostic does not implement motion.
 
+### Actual shield takeoffs: continuity check, 2026-10-21
+
+The initial attempt using photo-identified pins in the upper-left STEP/DIR header
+produced no encoder counts, although the encoder supply measured 5 V. The user
+then checked continuity with power disconnected and reported:
+
+- Uno D2 reaches a pin in the blue **X-labeled block below the STEP/DIR header**.
+- Uno D3 reaches a pin in the corresponding **Y-labeled block**.
+- All driver sockets are empty.
+
+Use the **exact pin independently confirmed to D2** for encoder green/A and the
+**exact pin confirmed to D3** for white/B. This description does not establish that
+every pin in an X/Y block is that signal; adjacent pins can carry other nets.
+Do not bridge pins or install clone jumpers for the encoder. The earlier
+photo-based header position/color advice is superseded by the continuity check.
+The electrical requirements remain D2/D3; firmware pin definitions are unchanged.
+
+After moving the wires to those continuity-confirmed pins, the encoder registered
+2399 counts on a manually indexed revolution and +3 counts after returning to
+the starting mark, with zero invalid transitions and no final stationary drift.
+See [shield retest](encoder-shield-test-2026-10-21.md). This confirms functional
+operation through these takeoffs; it does not locate every pin on other clones
+or establish calibrated angular accuracy.
+
+Remove any shunt bridging the **EN/GND** breakout before mounting/powering this
+shield with the diagnostic: the sketch drives D8 HIGH, so a shunt grounding that
+net would conflict with the output. The user confirmed this shunt removed and
+the 12-36 V motor supply disconnected for the encoder-only shield test.
+
 | Signal | Proposed Uno pin | Notes |
 | --- | --- | --- |
 | Encoder A | D2 | Also X STEP on common V3 boards |

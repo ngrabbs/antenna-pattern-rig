@@ -3,6 +3,9 @@
 Hardware: bare ATmega328P Uno with CNC shield removed and motor power off.
 Firmware: `firmware/encoder_monitor`; no motor motion commands are implemented.
 The first test is recorded in [encoder-test-2026-10-21.md](encoder-test-2026-10-21.md).
+The subsequent shield wiring correction and successful retest are recorded in
+[encoder-shield-test-2026-10-21.md](encoder-shield-test-2026-10-21.md). Use
+continuity-confirmed takeoffs on the actual shield before applying power.
 
 ## Wiring, with USB disconnected
 
