@@ -102,3 +102,17 @@ and -0.30 degree before disable. All met the initial +/-0.9-degree endpoint boun
 See the motor test record for motor step positions, relaxation and limits of the
 claim. This validates supervised bench convergence for these cycles, not calibrated
 antenna accuracy or general loaded repeatability.
+
+## Mounted antenna and v6 preparation
+
+Two antenna-mounted full-step cycles completed within the original tolerance,
+with no encoder invalid transitions or firmware fault. A third was intentionally
+stopped to address harsh motion; see the motor test record. No coax was fitted.
+
+Native motion and feedback checks passed after scaling feedback control for
+1/8, 1/16 and 1/32 stepping. Fine-mode checks cover both polarities and multiple
+transmission gains, missing/stalled feedback, scaled travel and pulse limits,
+relaxation, and a transient departure that must restart the endpoint dwell.
+The Docker v6 build used 17382 flash bytes and 1027 static RAM bytes; AVRDUDE
+verified the upload. These checks do not establish physical microstep accuracy
+or successful fine-mode convergence; the powered fine-mode test remains pending.

@@ -72,6 +72,7 @@ class Guard {
   uint8_t feedbackCorrections = 0;
 
   float stepsPerDegree() const { return 200.0f * microsteps / 360.0f; }
+  uint8_t feedbackTolerance() const { return microsteps == 1 ? 6 : 2; }
   uint8_t diagnosticMode() const { return feedbackTest ? 4 : (sweepTest ? 3 : (beltTest ? 2 : (singleStepTest ? 1 : 0))); }
   float expectedCounts(int32_t steps) const { return steps * 12.0f / microsteps; }
   void ping(uint32_t now) { heartbeat = now; }
@@ -122,14 +123,14 @@ class Guard {
   }
   const char* feedback(uint32_t now) {
     if (!armed || !referenced || phase != HOLDING || sign || position != 0) return "zero_before_feedback";
-    if (microsteps != 1) return "feedback_requires_full_steps";
+    if (!(microsteps == 1 || microsteps == 8 || microsteps == 16 || microsteps == 32)) return "feedback_requires_full_or_fine_steps";
     singleStepTest = beltTest = sweepTest = false; feedbackTest = true;
     sweepLeg = 1; sweepOutCounts = sweepHomeCounts = sweepOutSteps = 0;
     feedbackSign = 0; encoderGoal = -1200; feedbackSteps = feedbackCorrections = 0;
     fbLastPosition = fbBurstPosition = position;
     fbBurstOrigin = relative; fbBurstChecked = false; fbAtTarget = false;
     fbNoProgressSteps = 0; fbLegStarted = now;
-    return begin(-5, now);  // Learn polarity from a bounded five-step outward burst.
+    return begin(-5L * microsteps, now);  // Learn polarity over five nominal full steps.
   }
   const char* jog(double degrees, uint32_t now) {
     if (!armed || !referenced || !sign || phase != HOLDING) return "probe_first_or_busy";
@@ -198,7 +199,7 @@ class Guard {
   bool sweepTest = false;
   bool feedbackTest = false;
   bool fbBurstChecked = false, fbAtTarget = false;
-  uint8_t fbNoProgressSteps = 0;
+  uint16_t fbNoProgressSteps = 0;
   int32_t fbLastPosition = 0, fbBurstPosition = 0, fbBurstOrigin = 0;
   uint32_t fbLegStarted = 0, fbBurstEnded = 0, fbAtTargetSince = 0;
   uint32_t heartbeat = 0, armTime = 0, lastChange = 0, referenceInvalid = 0;
@@ -206,22 +207,25 @@ class Guard {
   int32_t previousRaw = 0;
   void feedbackMove(uint32_t now) {
     const int32_t error = encoderGoal - relative * feedbackSign;
-    int32_t count = labs(error) / 12;
+    int32_t count = labs(error) * microsteps / 12;
     if (count < 1) count = 1;
-    if (count > 5) count = 5;
-    if (labs(error) <= 24) {
+    const int32_t maxBurst = (microsteps >= 8 ? 20L : 5L) * microsteps;
+    if (count > maxBurst) count = maxBurst;
+    int32_t nearCounts = 24 / microsteps;
+    if (nearCounts < 4) nearCounts = 4;
+    if (labs(error) <= nearCounts) {
       count = 1;
       if (++feedbackCorrections > 8) { stop(CORRECTION_LIMIT); return; }
     }
     int32_t next = position + (error > 0 ? count : -count);
-    if (next < -125 || next > 5 || feedbackSteps + count > 140) { stop(TRAVEL); return; }
+    if (next < -125L * microsteps || next > 5L * microsteps || feedbackSteps + count > 140L * microsteps) { stop(TRAVEL); return; }
     fbBurstPosition = position; fbBurstOrigin = relative;
     fbBurstChecked = false; fbAtTarget = false;
     begin(next, now);
   }
   void updateFeedback(uint32_t now, bool motorDone) {
     const int32_t moved = labs(position - fbLastPosition);
-    if (moved > 140 || feedbackSteps + moved > 140 || position < -125 || position > 5) {
+    if (moved > 140L * microsteps || feedbackSteps + moved > 140L * microsteps || position < -125L * microsteps || position > 5L * microsteps) {
       stop(TRAVEL); return;
     }
     feedbackSteps += moved; fbLastPosition = position;
@@ -231,6 +235,8 @@ class Guard {
       phase = SETTLING; fbBurstEnded = now;
     }
     if (phase != SETTLING) return;
+    // Excursions reset the endpoint dwell even while waiting for encoder quiet.
+    if (feedbackSign && labs(encoderGoal - relative * feedbackSign) > feedbackTolerance()) fbAtTarget = false;
     if ((uint32_t)(now - fbBurstEnded) > 6000) { stop(SETTLE_TIMEOUT); return; }
     if ((uint32_t)(now - fbBurstEnded) < 350 || (uint32_t)(now - lastChange) < 250) return;
     if (!feedbackSign) {
@@ -245,11 +251,11 @@ class Guard {
       }
       if (labs(observed) < 2) fbNoProgressSteps += labs(command);
       else fbNoProgressSteps = 0;
-      if (fbNoProgressSteps >= 10) { stop(NO_FEEDBACK); return; }
+      if (fbNoProgressSteps >= 10L * microsteps) { stop(NO_FEEDBACK); return; }
       fbBurstChecked = true;
     }
     const int32_t error = encoderGoal - relative * feedbackSign;
-    if (labs(error) > 6) { fbAtTarget = false; feedbackMove(now); return; }
+    if (labs(error) > feedbackTolerance()) { fbAtTarget = false; feedbackMove(now); return; }
     if (!fbAtTarget) { fbAtTarget = true; fbAtTargetSince = now; }
     if ((uint32_t)(now - fbAtTargetSince) < 2000) return;
     if (sweepLeg == 1) {

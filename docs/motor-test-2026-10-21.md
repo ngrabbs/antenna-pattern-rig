@@ -286,3 +286,34 @@ Raw logs, live snapshots, per-cycle states and a machine-readable numeric summar
 are retained privately in the run-07 data directory. No correction multiplier was
 fitted; bounded feedback was applied during each cycle. The controller was left
 disabled after the third cycle.
+
+## Mounted antenna: full-step feedback tests and smoothing change
+
+A small patch antenna was securely mounted with no coax attached. Two further
+full-step FEEDBACK180 cycles completed with fault=0 and bad=0:
+
+| Loaded cycle | Outward encoder endpoint | Home encoder residual | Outward motor position | Final motor position |
+| --- | ---: | ---: | ---: | ---: |
+| 1 | -1196 counts / -179.40 degrees | 0 | -101 full steps | +1 full step |
+| 2 | -1201 counts / -180.15 degrees | 0 | -102 full steps | 0 |
+
+Completion times were 20:47:57 and 20:49:22 UTC. Both cycles took approximately
+80 seconds. Two seconds after disable, home readings were +0.15 and 0 degree.
+A third loaded cycle was intentionally stopped on the user's request for smoother
+motion, at -630 encoder counts (-94.5 degrees) and motor position -54 full steps.
+It did not complete and did not automatically return home. The user reported hard
+impacts at each full step. These two completed cycles do not qualify coax loading
+or independently measure antenna angle.
+
+Firmware v6 changes the fine-mode acceleration to 2 degrees/second squared, keeps
+the maximum speed at 5 degrees/second, scales pulse and travel limits with the
+configured subdivision, and uses longer coarse bursts to reduce repeated pauses.
+Fine-mode endpoint tolerance is +/-2 encoder counts (nominal +/-0.3 degree). The
+continuous endpoint dwell now restarts whenever the reading leaves tolerance.
+The user installed only M2 for 1/16 stepping with power disconnected. AVRDUDE
+verified the v6 upload. Physical fine-mode smoothness and endpoint results are
+pending; a smaller commanded microstep does not establish pointing accuracy.
+
+`tools/summarize_feedback.py` reproduces endpoint summaries for the captured
+feedback tests; raw serial logs remain private. It separates boots and distinguishes
+completed cycles from the final intentionally interrupted attempt.

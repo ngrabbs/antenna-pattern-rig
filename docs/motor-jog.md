@@ -59,7 +59,7 @@ Commands are uppercase, one per newline at 115200 baud:
 | `TICK` | Diagnostic: CONFIG 1 only, fresh ZERO required; command one +1.8-degree full step, observe for at least 1 second after the last pulse, then disable automatically |
 | `BELTTEST` | Diagnostic: CONFIG 1 and fresh ZERO only; 20 full steps (36 nominal motor degrees), record encoder without enforcing 1:1 tracking, observe for 1 second, disable automatically |
 | `SWEEP180` | Diagnostic: CONFIG 1 and fresh ZERO only; -100 full steps (nominal -180 motor degrees), settle, return to original step zero without rezeroing, settle, disable |
-| `FEEDBACK180` | Encoder-targeted test: CONFIG 1 and fresh ZERO only; learn encoder polarity, seek logical encoder -1200 counts then zero, settle, disable; bounded corrections |
+| `FEEDBACK180` | Encoder-targeted test: CONFIG 1/8/16/32 and fresh ZERO; learn encoder polarity, seek logical encoder -1200 counts then zero, settle, disable; bounded corrections |
 | `JOG -9` | Relative jog, up to 9 degrees magnitude; requires successful PROBE |
 | `STOP` or `!` | Immediately cancel step generation and disable coils; invalidate reference |
 | `CLEAR` | Clear a latched fault while disabled; does not arm |
@@ -87,7 +87,7 @@ no fault. Otherwise it disables with a following or settling fault. Inspect the
 recorded encoder displacement; this tolerance is a diagnostic acceptance bound,
 not a claim of pointing accuracy. Early STOP or any other fault can shorten the
 observation. Every attempt requires ARM and a fresh ZERO; no repeat is automatic.
-Firmware boot identification is now `motor_jog_v5_disabled`.
+Firmware boot identification is now `motor_jog_v6_disabled`.
 
 `BELTTEST` explicitly bypasses only expected motor-versus-encoder displacement
 checks for this unqualified elastic transmission. It never learns sign or enables
@@ -134,25 +134,27 @@ with one fixed calibration factor. A real home/index reference is not installed.
 
 `FEEDBACK180` is a separate, explicit supervised mode (`diag=4`). It uses encoder
 readings as the working position reference, rather than a fixed step-to-angle
-correction. It requires CONFIG 1, ARM, and a settled ZERO. A first -5-full-step
+correction. It requires CONFIG 1/8/16/32 matching hardware, ARM, and a settled ZERO. A first -5-full-step
 burst learns encoder polarity and must yield at least 12 counts of displacement.
 That burst is part of the outward leg, not a separate reference reset.
 
 The controller then seeks logical encoder -1200 counts (nominal -180 degrees),
 records the settled raw `out_enc`, and returns to the original encoder zero,
 recording `home_enc`. Zero is preserved through reversal. Near an endpoint it uses
-one full step per correction; away from it, bursts have at most five full steps.
+one driver step per correction. In full-step mode, bursts have at most five full
+steps; fine modes use up to 20 nominal full steps to reduce intermediate stops.
 Each burst waits at least 350 ms after the final pulse and for 250 ms encoder
-quiet before deciding the next move. Within +/-6 encoder counts (nominal +/-0.9
-degree), it observes for two seconds before accepting the endpoint. This is an
-initial full-step tolerance, not encoder accuracy or a guarantee of post-disable
+quiet before deciding the next move. Full-step tolerance is +/-6 encoder counts
+(nominal +/-0.9 degree); fine-mode tolerance is +/-2 counts (+/-0.3 degree).
+It observes for two seconds before accepting the endpoint. These are control
+tolerances, not encoder accuracy or a guarantee of post-disable
 position. The motor step counter need not return to zero when the encoder does.
 
 Bounds specific to this mode:
 
 - Motor position from start: -125 to +5 full steps (-225 to +9 nominal degrees).
   Ensure clearance for the outward margin and a small correction past starting zero.
-- At most 140 commanded step increments per leg, including reversals, and at most
+- At most 140 nominal full steps worth of driver pulses per leg, including reversals, and at most
   eight near-target correction requests per leg. A proposed move exceeding a
   bound is rejected with a latched fault.
 - At most 90 seconds per leg; at most six seconds observation after a burst.
@@ -160,7 +162,7 @@ Bounds specific to this mode:
 - Two-second heartbeat, immediate STOP, invalid-transition checking and fault
   latching remain active. Normal jog/other diagnostic limits remain unchanged.
 - After learning polarity, stalled bursts that each yield fewer than two counts
-  accumulate their commanded steps; ten such steps trip no-feedback protection.
+  accumulate their commanded pulses; ten nominal full steps worth of such pulses trip no-feedback protection.
   Opposite response greater than
   12 counts over a settled burst trips wrong-direction protection.
 
@@ -172,6 +174,30 @@ budget, and `corrections` is the near-target request count. `out_steps` records
 the motor command position at the outward endpoint. `out_enc` and `home_enc`
 are raw counts, so use `enc_sign` when comparing to the logical target. `enc`
 continues to record relaxation after disable. Direction is a GPIO/viewing convention.
+
+`step`, `target`, `out_steps` and `leg_steps` count driver pulses at the configured
+subdivision. Divide by `microsteps` for nominal full-step equivalents. `enc_tol`
+reports the current tolerance in encoder counts. All motor travel, pulse budgets,
+startup polarity motion and no-progress limits scale with subdivision.
+
+## Smoother motion setup (v6)
+
+With all power off, install only the Z M2 jumper, leaving M0 and M1 open, for
+DRV8825 1/16 stepping; verify the correct jumper by its label or continuity.
+Use CONFIG 16 after reconnecting USB with motor power off. The nominal pulse
+increment becomes 0.1125 degree. This setting is specific to the DRV8825 mode
+table, not interchangeable with A4988 jumper settings. Keep the established
+current-limit setting; this change does not require increasing VREF.
+
+For CONFIG 8/16/32, maximum nominal speed remains 5 degrees/s and acceleration is
+reduced from 10 to 2 degrees/s squared. Longer bounded coarse moves reduce the
+number of stop/observe/start transitions. This is still an observe-between-moves
+position controller, not a continuously interpolated RF sweep. Endpoint dwell now
+resets immediately on any out-of-tolerance encoder excursion, including transients
+while waiting for quiet. Fault, pulse and travel limits remain finite. Physical
+smoothness and fine-mode convergence must be tested with the actual mount.
+
+Mode table source: [Pololu DRV8825 documentation](https://www.pololu.com/product/2133/).
 
 Additional fault codes: 8 no usable/progressing feedback; 9 correction limit;
 10 wrong-direction encoder response. Reaching encoder targets validates only the

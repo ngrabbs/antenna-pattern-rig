@@ -60,6 +60,7 @@ void status() {
   Serial.print(F(",\"enc_sign\":")); Serial.print((int)guard.feedbackSign);
   Serial.print(F(",\"leg_steps\":")); Serial.print(guard.feedbackSteps);
   Serial.print(F(",\"corrections\":")); Serial.print(guard.feedbackCorrections);
+  Serial.print(F(",\"enc_tol\":")); Serial.print(guard.feedbackTolerance());
   Serial.println('}');
 }
 void dispatch(const char* line) {
@@ -72,7 +73,10 @@ void dispatch(const char* line) {
     case rig::STATUS: status(); return;
     case rig::CONFIG:
       error = guard.configure(request.value);
-      if (!error) { motor.setMaxSpeed(5.0f * guard.stepsPerDegree()); motor.setAcceleration(10.0f * guard.stepsPerDegree()); }
+      if (!error) {
+        motor.setMaxSpeed(5.0f * guard.stepsPerDegree());
+        motor.setAcceleration((guard.microsteps >= 8 ? 2.0f : 10.0f) * guard.stepsPerDegree());
+      }
       break;
     case rig::ARM:
       error = guard.arm(now);
@@ -109,7 +113,7 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(3), encoderEdge, CHANGE);
   motor.setMinPulseWidth(3);
   Serial.begin(115200);
-  Serial.println(F("{\"boot\":\"motor_jog_v5_disabled\"}"));
+  Serial.println(F("{\"boot\":\"motor_jog_v6_disabled\"}"));
 }
 void loop() {
   uint8_t budget = 32;

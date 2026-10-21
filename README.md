@@ -8,8 +8,11 @@ RF instrument: NanoVNA-F V2; other instrument models are not yet recorded.
 outward/return diagnostics. Equal grooved pulleys and a rubber band transfer motion
 to the encoder; commanded motor angle and encoder angle disagree. See the
 [motor test results](docs/motor-test-2026-10-21.md). Encoder-targeted FEEDBACK180
-has completed three supervised encoder-targeted bench cycles within the initial
-+/-0.9-degree endpoint tolerance; antenna pointing accuracy is not calibrated. Firmware boots
+completed three unloaded and two antenna-mounted bench cycles within the initial
++/-0.9-degree endpoint tolerance. A third loaded cycle was intentionally stopped
+to address harsh full steps. Firmware v6 is uploaded for a supervised 1/16-step
+test with gentler acceleration; physical smoothness is pending. Antenna pointing
+accuracy is not calibrated. Firmware boots
 disabled and requires explicit setup and commands. See [motor guide](docs/motor-jog.md).
 RF instrument capture and automatic antenna-pattern acquisition are not implemented. Earlier on
 2026-10-21 the encoder diagnostic was
@@ -27,11 +30,11 @@ The driver photo shows R250 sense resistors; DRV8825 identity is provisional.
 The user measured 0.993 V at the adjustment screw, approximately 12 V at VMOT,
 and low mode inputs with no jumpers (full steps). No license has been selected yet.
 
-The driver is in Z with no mode jumpers (full step); equal-size grooved pulleys
+The driver is in Z with only M2 jumpered (1/16 stepping); equal-size grooved pulleys
 give a reported nominal 1:1 ratio, with elastic transfer and slip unqualified.
 The earlier rigid-coupling assumption is superseded by the assembly photo and
 test results. Software configuration is
-`CONFIG 1`. The motion build uses the GPLv3/commercial AccelStepper 1.64.0
+`CONFIG 16`. Earlier tests used full steps with no jumpers. The motion build uses the GPLv3/commercial AccelStepper 1.64.0
 dependency noted in the motor guide.
 
 The subsequent [encoder-through-shield test](docs/encoder-shield-test-2026-10-21.md)
