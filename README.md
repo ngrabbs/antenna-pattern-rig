@@ -10,8 +10,8 @@ to the encoder; commanded motor angle and encoder angle disagree. See the
 [motor test results](docs/motor-test-2026-10-21.md). Encoder-targeted FEEDBACK180
 completed three unloaded and two antenna-mounted bench cycles within the initial
 +/-0.9-degree endpoint tolerance. A third loaded cycle was intentionally stopped
-to address harsh full steps. Firmware v6 is uploaded for a supervised 1/16-step
-test with gentler acceleration; physical smoothness is pending. Antenna pointing
+to address harsh full steps. Firmware v6 completed its first mounted 1/16-step cycle with encoder endpoints
+of -180.00 and 0.00 degrees; the user reported much smoother motion. Antenna pointing
 accuracy is not calibrated. Firmware boots
 disabled and requires explicit setup and commands. See [motor guide](docs/motor-jog.md).
 RF instrument capture and automatic antenna-pattern acquisition are not implemented. Earlier on

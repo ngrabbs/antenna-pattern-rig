@@ -116,3 +116,9 @@ relaxation, and a transient departure that must restart the endpoint dwell.
 The Docker v6 build used 17382 flash bytes and 1027 static RAM bytes; AVRDUDE
 verified the upload. These checks do not establish physical microstep accuracy
 or successful fine-mode convergence; the powered fine-mode test remains pending.
+
+The first powered mounted-antenna CONFIG 16 cycle subsequently completed with
+encoder endpoints -1200 and 0 counts, no faults or invalid transitions, and
+automatic disable. The user reported much smoother motion. After disable it
+relaxed by one encoder count. This establishes one supervised fine-mode success;
+repeatability under fine stepping and coax loading remain untested.

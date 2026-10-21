@@ -317,3 +317,19 @@ pending; a smaller commanded microstep does not establish pointing accuracy.
 `tools/summarize_feedback.py` reproduces endpoint summaries for the captured
 feedback tests; raw serial logs remain private. It separates boots and distinguishes
 completed cycles from the final intentionally interrupted attempt.
+
+## First mounted 1/16-step cycle
+
+With M2 installed alone, CONFIG 16 accepted, and the user confirming motor power
+on, one FEEDBACK180 cycle completed at 21:03:16 UTC (16:03 CDT). The user reported
+"Much smoother." The encoder outward endpoint was -1200 counts (-180.00 degrees),
+and the home endpoint was 0 counts. Both met the +/-2-count tolerance. Fault and
+invalid-transition counters stayed zero, and the driver disabled automatically.
+
+Outward travel used 1628 driver pulses (101.75 nominal full-step equivalents);
+return used 1645 pulses, ending at motor pulse position +17 relative to ZERO.
+No near-target correction requests were needed. The cycle took approximately
+108.8 seconds, with 54.8 seconds outward and 54.0 seconds returning. Two seconds
+after disable, the encoder read +1 count (+0.15 degree). This is one successful
+loaded fine-mode cycle, not a repeatability series or absolute angle calibration.
+No coax was attached. Private run-09 logs and summaries retain the measurements.
