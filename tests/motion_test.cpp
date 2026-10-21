@@ -36,6 +36,49 @@ int main() {
   assert(parse("TICK 1").command == INVALID);
   assert(parse("BELTTEST").command == BELTTEST);
   assert(parse("BELTTEST 50").command == INVALID);
+  assert(parse("SWEEP180").command == SWEEP180);
+  assert(parse("SWEEP180 2").command == INVALID);
+  for (int polarity : {-1,0,1}) for (int residual : {0,30}) {
+    Guard g; ready(g); assert(!g.sweep(700));
+    assert(g.target==-100 && g.sweepLeg==1 && g.diagnosticMode()==3);
+    uint32_t now=700;
+    for (int step=-1;step>=-100;--step) {
+      now+=360;g.ping(now);g.update(now,step*12*polarity,0,step,step==-100);
+      assert(g.armed && g.fault==OK && g.sweepLeg==1);
+    }
+    now+=1999;g.ping(now);g.update(now,-1200*polarity,0,-100,true);
+    assert(g.sweepLeg==1 && g.armed);
+    ++now;g.ping(now);g.update(now,-1200*polarity,0,-100,true);
+    assert(g.sweepLeg==2 && g.target==0 && g.sweepOutCounts==-1200*polarity);
+    for (int step=-99;step<=0;++step) {
+      now+=360;g.ping(now);
+      int raw=step*12*polarity+residual*(step+100)/100;
+      g.update(now,raw,0,step,step==0);
+      assert(g.armed && g.fault==OK && g.sweepLeg==2);
+    }
+    now+=1999;g.ping(now);g.update(now,residual,0,0,true);assert(g.armed);
+    ++now;g.ping(now);g.update(now,residual,0,0,true);
+    assert(!g.armed && g.sweepLeg==3 && g.position==0 && g.completed==1);
+    assert(g.sweepHomeCounts==residual && !g.referenced && !g.sign);
+    assert(g.sweep(now+1));
+  }
+  { Guard g; assert(g.sweep(0)); ready(g,8); assert(g.sweep(700)); }
+  { Guard g; ready(g); assert(!g.sweep(700));g.ping(800);g.update(800,1401,0,-1,false);
+    assert(!g.armed && g.fault==TRAVEL); }
+  { Guard g; ready(g); assert(!g.sweep(700));g.ping(800);g.update(800,0,0,-101,false);
+    assert(!g.armed && g.fault==TRAVEL); }
+  { Guard g; ready(g); assert(!g.sweep(700));g.ping(45701);g.update(45701,0,0,-99,false);
+    assert(!g.armed && g.fault==MOVE_TIMEOUT); }
+  { Guard g; ready(g); assert(!g.sweep(700));g.ping(1000);g.update(1000,-1200,0,-100,true);
+    g.ping(5001);g.update(5001,-1200,0,-100,true);
+    assert(!g.armed && g.fault==SETTLE_TIMEOUT && g.sweepLeg==1); }
+  { Guard g; ready(g); assert(!g.sweep(700));g.update(2801,0,0,-1,false);
+    assert(!g.armed && g.fault==COMM_TIMEOUT); }
+  { Guard g; ready(g); assert(!g.sweep(700));g.ping(800);g.update(800,0,1,-1,false);
+    assert(!g.armed && g.fault==BAD_ENCODER); }
+  { Guard g; ready(g); assert(!g.sweep(700));g.stop();
+    g.ping(5000);g.update(5000,0,0,0,true);
+    assert(!g.armed && g.phase==DISABLED && g.sweepLeg==1 && g.completed==0); }
   for (int observed : {0, 1, -1}) {
     Guard g; ready(g); assert(!g.belt(700)); assert(g.target == 20 && g.diagnosticMode() == 2);
     for (int step=1; step<=20; ++step) {

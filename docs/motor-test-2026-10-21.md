@@ -151,3 +151,20 @@ absence of creep. Independent reference marks/angle measurements on both shafts,
 or a positive mechanical transmission, are needed before calibration or feedback
 qualification. Raw telemetry and per-trial timestamps/states are retained in
 ignored local data; the controller was left disabled after trial 3.
+
+## Requested 180-degree outward-and-return diagnostic
+
+Firmware v4 adds the explicit SWEEP180 cycle: fixed -100 motor full steps,
+two-second endpoint observation, return to the original software step zero without
+resetting encoder zero, two-second observation, automatic disable. It records
+turnaround and return encoder counts, so outbound transfer and reversal residual
+can be evaluated separately. Physical direction is relative to the GPIO convention,
+not an independently established left/right reference. The user confirmed motor
+power off and USB connected before the firmware upload.
+
+Native tests cover both encoder polarities, zero response, a nonzero return residual,
+retained zero across reversal, endpoint observation periods, automatic disable,
+full-step/reference interlocks, travel bounds, watchdog, invalid transitions,
+movement/settling timeouts and STOP preventing an automatic return. This diagnostic
+has separate explicit encoder/command travel and time bounds documented in
+motor-jog.md; it does not relax normal jog guards. Physical sweep results are pending.

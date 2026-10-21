@@ -6,7 +6,7 @@
 #include <math.h>
 
 namespace rig {
-enum Command { INVALID, CONFIG, ARM, ZERO, PROBE, JOG, STOP, CLEAR, STATUS, PING, TICK, BELTTEST };
+enum Command { INVALID, CONFIG, ARM, ZERO, PROBE, JOG, STOP, CLEAR, STATUS, PING, TICK, BELTTEST, SWEEP180 };
 struct Request { Command command; double value; };
 inline Request parse(const char* input) {
   char text[64];
@@ -15,9 +15,9 @@ inline Request parse(const char* input) {
   char* word = strtok(text, " \t");
   if (!word) return {INVALID, 0};
   Command c = INVALID;
-  const char* names[] = {"CONFIG", "ARM", "ZERO", "PROBE", "JOG", "STOP", "CLEAR", "STATUS", "PING", "TICK", "BELTTEST"};
-  const Command codes[] = {CONFIG, ARM, ZERO, PROBE, JOG, STOP, CLEAR, STATUS, PING, TICK, BELTTEST};
-  for (uint8_t i = 0; i < 11; ++i) if (!strcmp(word, names[i])) c = codes[i];
+  const char* names[] = {"CONFIG", "ARM", "ZERO", "PROBE", "JOG", "STOP", "CLEAR", "STATUS", "PING", "TICK", "BELTTEST", "SWEEP180"};
+  const Command codes[] = {CONFIG, ARM, ZERO, PROBE, JOG, STOP, CLEAR, STATUS, PING, TICK, BELTTEST, SWEEP180};
+  for (uint8_t i = 0; i < 12; ++i) if (!strcmp(word, names[i])) c = codes[i];
   char* arg = strtok(NULL, " \t");
   if (c == CONFIG || c == JOG) {
     if (!arg || strtok(NULL, " \t")) return {INVALID, 0};
@@ -62,9 +62,11 @@ class Guard {
   int8_t sign = 0;  // Raw encoder polarity relative to commanded positive steps.
   int32_t position = 0, target = 0, offset = 0, relative = 0;
   uint32_t invalid = 0, completed = 0;
+  uint8_t sweepLeg = 0;  // 0 inactive, 1 outward, 2 return, 3 completed.
+  int32_t sweepOutCounts = 0, sweepHomeCounts = 0;
 
   float stepsPerDegree() const { return 200.0f * microsteps / 360.0f; }
-  uint8_t diagnosticMode() const { return beltTest ? 2 : (singleStepTest ? 1 : 0); }
+  uint8_t diagnosticMode() const { return sweepTest ? 3 : (beltTest ? 2 : (singleStepTest ? 1 : 0)); }
   float expectedCounts(int32_t steps) const { return steps * 12.0f / microsteps; }
   void ping(uint32_t now) { heartbeat = now; }
   const char* configure(double value) {
@@ -76,7 +78,8 @@ class Guard {
     if (armed || phase == FAULT) return "not_disarmed";
     if (!microsteps) return "configure_first";
     armed = true; referenced = false; sign = 0; position = target = 0;
-    singleStepTest = beltTest = false;
+    singleStepTest = beltTest = sweepTest = false;
+    sweepLeg = 0; sweepOutCounts = sweepHomeCounts = 0;
     armTime = heartbeat = now; phase = HOLDING; return NULL;
   }
   const char* zero(uint32_t now, int32_t raw, uint32_t bad) {
@@ -88,20 +91,27 @@ class Guard {
   }
   const char* probe(uint32_t now) {
     if (!armed || !referenced || phase != HOLDING || sign || position != 0) return "zero_before_probe";
-    probing = true; singleStepTest = beltTest = false;
+    probing = true; singleStepTest = beltTest = sweepTest = false;
     return begin(5L * microsteps, now);  // Exactly 9 nominal degrees at any subdivision.
   }
   const char* tick(uint32_t now) {
     if (!armed || !referenced || phase != HOLDING || sign || position != 0) return "zero_before_tick";
     if (microsteps != 1) return "tick_requires_full_steps";
-    probing = true; singleStepTest = true; beltTest = false;
+    probing = true; singleStepTest = true; beltTest = sweepTest = false;
     return begin(1, now);  // One full step; observe for one second, then disable.
   }
   const char* belt(uint32_t now) {
     if (!armed || !referenced || phase != HOLDING || sign || position != 0) return "zero_before_belttest";
     if (microsteps != 1) return "belttest_requires_full_steps";
-    probing = true; singleStepTest = false; beltTest = true;
+    probing = true; singleStepTest = sweepTest = false; beltTest = true;
     return begin(20, now);  // Fixed 36-degree motor command; encoder ratio unqualified.
+  }
+  const char* sweep(uint32_t now) {
+    if (!armed || !referenced || phase != HOLDING || sign || position != 0) return "zero_before_sweep";
+    if (microsteps != 1) return "sweep_requires_full_steps";
+    probing = true; singleStepTest = beltTest = false; sweepTest = true;
+    sweepLeg = 1; sweepOutCounts = sweepHomeCounts = 0;
+    return begin(-100, now);  // 180 nominal degrees outward, then return to step zero.
   }
   const char* jog(double degrees, uint32_t now) {
     if (!armed || !referenced || !sign || phase != HOLDING) return "probe_first_or_busy";
@@ -110,7 +120,7 @@ class Guard {
     if (!delta) return "below_step_resolution";
     int32_t next = position + delta;
     if (fabs(next / stepsPerDegree()) > 45.001f) return "target_limit";
-    probing = false; singleStepTest = beltTest = false;
+    probing = false; singleStepTest = beltTest = sweepTest = false;
     return begin(next, now);
   }
   void stop(Fault reason = OK) {
@@ -129,17 +139,27 @@ class Guard {
     if ((uint32_t)(now - heartbeat) > 2000) { stop(COMM_TIMEOUT); return; }
     if (!referenced) return;
     if (bad != referenceInvalid) { stop(BAD_ENCODER); return; }
-    if (fabs(relative * 0.15f) > 50.0f) { stop(TRAVEL); return; }
+    const float encoderLimit = sweepTest ? 210.0f : 50.0f;
+    if (fabs(relative * 0.15f) > encoderLimit) { stop(TRAVEL); return; }
+    if (sweepTest && (position < -100 || position > 0)) { stop(TRAVEL); return; }
     if (phase == MOVING || phase == SETTLING) {
       float actual = probing ? fabs((float)relative) : relative * sign;
       float expected = probing ? fabs(expectedCounts(position)) : expectedCounts(position);
-      if (!beltTest && fabs(actual - expected) > 24.0f) { stop(FOLLOWING); return; }
-      if ((uint32_t)(now - moveTime) > 15000) { stop(MOVE_TIMEOUT); return; }
+      if (!beltTest && !sweepTest && fabs(actual - expected) > 24.0f) { stop(FOLLOWING); return; }
+      const uint32_t movementTimeout = sweepTest ? 45000 : 15000;
+      if ((uint32_t)(now - moveTime) > movementTimeout) { stop(MOVE_TIMEOUT); return; }
       if (phase == MOVING && motorDone) { phase = SETTLING; settleTime = now; }
       if (phase == SETTLING) {
-        if ((uint32_t)(now - settleTime) > 1500) { stop(SETTLE_TIMEOUT); return; }
-        const uint32_t observationTime = (singleStepTest || beltTest) ? 1000 : 250;
+        const uint32_t settleTimeout = sweepTest ? 4000 : 1500;
+        if ((uint32_t)(now - settleTime) > settleTimeout) { stop(SETTLE_TIMEOUT); return; }
+        const uint32_t observationTime = sweepTest ? 2000 : ((singleStepTest || beltTest) ? 1000 : 250);
         if ((uint32_t)(now - settleTime) >= observationTime && (uint32_t)(now - lastChange) >= 250) {
+          if (sweepTest) {
+            if (sweepLeg == 1) {
+              sweepOutCounts = relative; sweepLeg = 2; begin(0, now); return;
+            }
+            sweepHomeCounts = relative; sweepLeg = 3; ++completed; stop(); return;
+          }
           if (beltTest) { ++completed; stop(); return; }  // Completion is not a tracking pass.
           if (fabs(actual - expectedCounts(target)) > 6.0f) { stop(FOLLOWING); return; }
           if (singleStepTest) { ++completed; stop(); return; }
@@ -155,6 +175,7 @@ class Guard {
   bool probing = false;
   bool singleStepTest = false;
   bool beltTest = false;
+  bool sweepTest = false;
   uint32_t heartbeat = 0, armTime = 0, lastChange = 0, referenceInvalid = 0;
   uint32_t moveTime = 0, settleTime = 0;
   int32_t previousRaw = 0;

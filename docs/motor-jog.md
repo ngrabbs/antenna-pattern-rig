@@ -57,6 +57,7 @@ Commands are uppercase, one per newline at 115200 baud:
 | `PROBE` | One +9-degree nominal move to determine encoder polarity; requires a fresh ZERO |
 | `TICK` | Diagnostic: CONFIG 1 only, fresh ZERO required; command one +1.8-degree full step, observe for at least 1 second after the last pulse, then disable automatically |
 | `BELTTEST` | Diagnostic: CONFIG 1 and fresh ZERO only; 20 full steps (36 nominal motor degrees), record encoder without enforcing 1:1 tracking, observe for 1 second, disable automatically |
+| `SWEEP180` | Diagnostic: CONFIG 1 and fresh ZERO only; -100 full steps (nominal -180 motor degrees), settle, return to original step zero without rezeroing, settle, disable |
 | `JOG -9` | Relative jog, up to 9 degrees magnitude; requires successful PROBE |
 | `STOP` or `!` | Immediately cancel step generation and disable coils; invalidate reference |
 | `CLEAR` | Clear a latched fault while disabled; does not arm |
@@ -84,7 +85,7 @@ no fault. Otherwise it disables with a following or settling fault. Inspect the
 recorded encoder displacement; this tolerance is a diagnostic acceptance bound,
 not a claim of pointing accuracy. Early STOP or any other fault can shorten the
 observation. Every attempt requires ARM and a fresh ZERO; no repeat is automatic.
-Firmware boot identification is now `motor_jog_v3_disabled`.
+Firmware boot identification is now `motor_jog_v4_disabled`.
 
 `BELTTEST` explicitly bypasses only expected motor-versus-encoder displacement
 checks for this unqualified elastic transmission. It never learns sign or enables
@@ -99,6 +100,33 @@ still. Telemetry `diag`: 0 ordinary, 1 TICK, 2 BELTTEST. A new ARM resets diagno
 mode; each diagnostic requires a fresh ZERO. Inspect visible shaft marks and
 recorded counts to assess whether motion was transferred. No antenna load should
 be attached during this bench test.
+
+`SWEEP180` is one outward-and-return diagnostic cycle, not an encoder-corrected
+home operation. It commands -100 steps then +100 steps at the same 5-degree/s
+nominal speed (roughly 36 seconds per leg). The negative direction is a GPIO
+convention; physical left/CW depends on the viewing direction and motor wiring.
+The encoder offset is preserved across reversal. Both endpoints require at least
+2 seconds observation and 250 ms encoder quiet, with a 4-second settling timeout.
+Each leg has a 45-second movement-plus-settling timeout; STOP, heartbeat and invalid
+transitions still disable immediately. Only this explicit diagnostic uses a
+210-degree nominal encoder excursion bound and motor-position bounds [-100,0]
+full steps. Normal jog and other diagnostic limits remain unchanged.
+
+This cycle records encoder response without testing expected 1:1 following and
+never corrects position or repeats automatically. Telemetry `diag=3`, `leg=1`
+outward, `leg=2` returning, `leg=3` completed. `out_enc` is captured at the settled
+turnaround; `home_enc` is captured at settled motor step zero before automatic
+disable. Multiply those counts by 0.15 for nominal encoder degrees. `enc` continues
+to report subsequent relaxation after disable. `done` increments once for the whole
+cycle and is not a positioning pass. An interrupted/faulted cycle does not
+automatically return; the current motor and encoder readings must be reviewed.
+
+With user-reported equal pulleys, compare |out_enc|*0.15 with 180 degrees and
+|home_enc-out_enc|*0.15 with 180 degrees. The signed residual is home_enc*0.15.
+These are commanded-versus-encoder discrepancies, not independently measured pure
+slip: actual motor angle, effective pulley ratio, elastic storage and encoder
+accuracy remain part of the measurement. A variable discrepancy cannot be removed
+with one fixed calibration factor. A real home/index reference is not installed.
 
 ## Bounds and faults
 
