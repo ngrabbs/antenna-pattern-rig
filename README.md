@@ -8,7 +8,8 @@ RF instrument: NanoVNA-F V2; other instrument models are not yet recorded.
 outward/return diagnostics. Equal grooved pulleys and a rubber band transfer motion
 to the encoder; commanded motor angle and encoder angle disagree. See the
 [motor test results](docs/motor-test-2026-10-21.md). Encoder-targeted FEEDBACK180
-is implemented and model-tested; its physical validation is pending. Firmware boots
+has completed three supervised encoder-targeted bench cycles within the initial
++/-0.9-degree endpoint tolerance; antenna pointing accuracy is not calibrated. Firmware boots
 disabled and requires explicit setup and commands. See [motor guide](docs/motor-jog.md).
 RF instrument capture and automatic antenna-pattern acquisition are not implemented. Earlier on
 2026-10-21 the encoder diagnostic was

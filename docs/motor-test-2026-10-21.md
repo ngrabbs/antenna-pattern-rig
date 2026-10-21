@@ -247,4 +247,42 @@ This applies bounded encoder feedback rather than a constant slip multiplier.
 Native feedback and previous motion tests passed; the Docker build used 16662
 flash bytes and 1018 static RAM bytes. The user confirmed motor power off and USB
 connected before the v5 upload, which AVRDUDE verified. Physical encoder-targeted
-results remain pending. The controller boots disabled; uploading does not arm it.
+results were pending at upload; the subsequent results are recorded below. The
+controller boots disabled; uploading does not arm it.
+
+## First three encoder-targeted cycles
+
+With the user reporting motor power on, FEEDBACK180 was run once and then repeated
+twice to check local consistency. Each cycle used ARM and a settled ZERO before
+seeking the encoder target; zero was preserved within each outward/return cycle.
+The captured encoder polarity was +1 throughout. Endpoint values below are the
+stored readings before automatic disable, not later relaxed readings.
+
+| Cycle | Encoder at outward endpoint | Encoder home residual | Outward motor step position | Final motor step position |
+| --- | ---: | ---: | ---: | ---: |
+| 1 | -1200 counts / -180.00 degrees | -1 / -0.15 degree | -103 | 0 |
+| 2 | -1199 counts / -179.85 degrees | +4 / +0.60 degree | -103 | 0 |
+| 3 | -1202 counts / -180.30 degrees | -2 / -0.30 degree | -103 | +1 |
+
+Cycles completed at 19:54:49, 19:57:03 and 19:58:36 UTC (14:54, 14:57 and 14:58
+CDT). Each disabled automatically with fault=0 and bad=0. The outward endpoint
+range was 3 counts / 0.45 degree; the home residual range was 6 counts / 0.90
+degree. Maximum absolute error from encoder targets was 0.30 degree outward and
+0.60 degree at home, within the declared +/-6-count / +/-0.9-degree tolerance.
+Two seconds after disable the home readings were -0.15, +0.60 and -0.15 degree
+respectively; cycle 3 therefore relaxed by one additional count toward zero.
+
+All outward legs used a net 103 motor full steps rather than the fixed-step test's
+100. Return pulse budgets consumed were 103, 105 and 104; cycle 2 included one
+near-target correction request on return. Cycle 3 accepted encoder home at motor
+step +1, demonstrating that the encoder target, not motor step zero, controls
+completion. These observations do not independently establish actual motor angle.
+
+This passes the initial supervised full-step encoder-targeted bench check. It does
+not establish loaded antenna repeatability, absolute pointing accuracy, a physical
+home reference, a rigid mechanical ratio, or performance over arbitrary targets.
+The friction transmission and post-disable relaxation remain part of the setup.
+Raw logs, live snapshots, per-cycle states and a machine-readable numeric summary
+are retained privately in the run-07 data directory. No correction multiplier was
+fitted; bounded feedback was applied during each cycle. The controller was left
+disabled after the third cycle.

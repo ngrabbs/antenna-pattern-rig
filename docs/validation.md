@@ -90,7 +90,15 @@ feedback at startup and after learning, wrong-direction response, unreachable
 targets/correction oscillation, motor/encoder travel and pulse-budget limits,
 continuous jitter/settling timeout, leg timeout, configuration/reference interlocks,
 heartbeat loss, invalid transitions and STOP. Existing motion tests still pass.
-Physical encoder-targeted positioning results remain pending; model success is
-not a demonstration of hardware convergence or actual antenna pointing.
+Physical results were pending when the model checks above were first run; model
+success alone is not a demonstration of hardware convergence or antenna pointing.
 
 The v5 Docker build passed with 16662 flash bytes and 1018 static RAM bytes.
+
+AVRDUDE subsequently verified that upload. Three physical FEEDBACK180 cycles then
+converged and disabled with fault=0 and bad=0. Encoder outward readings were
+180.00, 179.85 and 180.30 degrees in magnitude; home residuals were -0.15, +0.60
+and -0.30 degree before disable. All met the initial +/-0.9-degree endpoint bound.
+See the motor test record for motor step positions, relaxation and limits of the
+claim. This validates supervised bench convergence for these cycles, not calibrated
+antenna accuracy or general loaded repeatability.
