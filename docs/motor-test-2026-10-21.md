@@ -85,4 +85,22 @@ retains independent stop/heartbeat/invalid-transition/travel/time guards and
 automatically disables after observation. Native tests cover zero motion and
 both encoder polarities, a fixed target, one-second observation, automatic disable,
 configuration/reference interlocks, STOP, heartbeat, encoder invalidity, travel
-and move timeout. Physical BELTTEST results remain pending.
+and move timeout.
+
+## First BELTTEST result and observed band slip
+
+At approximately 19:12 UTC / 14:12 CDT, the diagnostic reached 20 software-counted
+full steps (36 nominal commanded motor degrees), then disabled automatically with
+`done=1`, `fault=0`, `bad=0`. The first disabled sample recorded +97 encoder
+counts (14.55 nominal encoder degrees); later samples relaxed to approximately
++100 counts (15 degrees) with the driver disabled. The user confirmed that the
+motor ran 20 steps and the rubber band was slipping. The command-completion
+counter is not a tracking pass and does not independently measure motor angle.
+
+Observed band slip establishes an unreliable mechanical transmission and explains
+why rigid 1:1 tracking cannot qualify this assembly. This result does not certify
+motor step accuracy, loaded torque, driver current calibration, or absolute antenna
+pointing. Do not fit a calibration ratio to this slipping-band run. Replace the
+friction band with a positive mechanical connection before positioning tests.
+For final antenna angle, sensing the turntable output also captures transmission
+backlash or slip that a motor-shaft encoder cannot see.
