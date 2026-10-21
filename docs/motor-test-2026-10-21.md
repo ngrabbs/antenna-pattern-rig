@@ -197,3 +197,39 @@ possible contributors. The different outward/return discrepancies, nonzero
 closure residual and prior variable increments do not justify applying one fixed
 slip correction. This cycle measures disagreement and return residual; it is not
 a demonstration of an accurately homed antenna or a qualified feedback controller.
+
+## Two further full sweep cycles using the encoder as the working reference
+
+The user chose to proceed treating encoder angle as the working measurement.
+Two further complete outward-and-return cycles were run without a firmware change
+or automatic encoder correction. ARM and ZERO were repeated before each cycle,
+so residuals are relative to that cycle's starting encoder reference, not an
+independent physical home. All three full cycles are compared below; endpoint
+angles were captured while holding, immediately before automatic disable.
+
+| Cycle | Outward encoder travel | Return encoder travel | Home residual |
+| --- | ---: | ---: | ---: |
+| 1 | -1161 counts / -174.15 degrees | +1178 / +176.70 degrees | +17 / +2.55 degrees |
+| 2 | -1172 counts / -175.80 degrees | +1174 / +176.10 degrees | +2 / +0.30 degrees |
+| 3 | -1174 counts / -176.10 degrees | +1173 / +175.95 degrees | -1 / -0.15 degrees |
+
+Cycles 2 and 3 completed at approximately 19:39 and 19:40 UTC (14:39 and 14:40
+CDT), with fault=0, bad=0 and automatic disable. Their two-second post-disable
+readings remained +2 and -1 counts respectively. Across all three cycles the
+outward travel spread was 1.95 degrees, return travel spread 0.75 degree, and
+home residual spread 2.70 degrees. The latest pair's outward spread was 0.30
+degree and home residual spread 0.45 degree; these smaller ranges do not erase
+the first cycle or qualify global repeatability.
+
+The tests use encoder readings as a working reference; they do not establish
+whether the motor, transmission or another component caused the mismatch.
+No correction factor or closed-loop position command was applied. Encoder-based
+target stopping is a sensible next supervised experiment, with bounded motor
+travel/time and an appropriate tolerance for the current full-step hardware.
+It must not be described as absolute antenna pointing calibration.
+
+`tools/summarize_sweeps.py` reproduces completed-cycle counts, encoder angles,
+descriptive transfer ratios and ranges from a timestamped serial log. It
+deduplicates repeated endpoint packets and separates boots. Raw logs and endpoint
+records stay in ignored local data. The summary was checked against all three
+captured endpoint tuples and the independently calculated first-cycle values.
