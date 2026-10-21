@@ -74,3 +74,23 @@ Live telemetry showed boot disabled, explicit `CONFIG 1` accepted, and a `JOG 1`
 request rejected while disarmed, with zero commanded steps and no fault.
 Actual supply/VREF measurements and powered movements remain pending. Unit-model
 tests and a verified upload do not establish the physical motion/stop behavior.
+
+## Subsequent powered diagnostics and encoder-targeted mode
+
+The baseline paragraph above records the earlier unpowered state. Subsequent
+measurements and powered movements are documented in
+[motor-test-2026-10-21.md](motor-test-2026-10-21.md), including three complete
+fixed-step 180-degree outward/return cycles. Those did not establish agreement
+between motor commands and encoder angle or absolute pointing accuracy.
+
+FEEDBACK180 native tests (`tests/feedback_test.cpp`) pass both encoder polarities,
+several transmission gains, asymmetric direction gains, endpoint relaxation,
+full-step tolerance convergence and millis rollover. They also exercise missing
+feedback at startup and after learning, wrong-direction response, unreachable
+targets/correction oscillation, motor/encoder travel and pulse-budget limits,
+continuous jitter/settling timeout, leg timeout, configuration/reference interlocks,
+heartbeat loss, invalid transitions and STOP. Existing motion tests still pass.
+Physical encoder-targeted positioning results remain pending; model success is
+not a demonstration of hardware convergence or actual antenna pointing.
+
+The v5 Docker build passed with 16662 flash bytes and 1018 static RAM bytes.

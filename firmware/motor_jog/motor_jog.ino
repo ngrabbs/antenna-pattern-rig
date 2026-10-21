@@ -55,6 +55,11 @@ void status() {
   Serial.print(F(",\"leg\":")); Serial.print(guard.sweepLeg);
   Serial.print(F(",\"out_enc\":")); Serial.print(guard.sweepOutCounts);
   Serial.print(F(",\"home_enc\":")); Serial.print(guard.sweepHomeCounts);
+  Serial.print(F(",\"out_steps\":")); Serial.print(guard.sweepOutSteps);
+  Serial.print(F(",\"enc_goal\":")); Serial.print(guard.encoderGoal);
+  Serial.print(F(",\"enc_sign\":")); Serial.print((int)guard.feedbackSign);
+  Serial.print(F(",\"leg_steps\":")); Serial.print(guard.feedbackSteps);
+  Serial.print(F(",\"corrections\":")); Serial.print(guard.feedbackCorrections);
   Serial.println('}');
 }
 void dispatch(const char* line) {
@@ -81,6 +86,7 @@ void dispatch(const char* line) {
     case rig::TICK: error = guard.tick(now); break;
     case rig::BELTTEST: error = guard.belt(now); break;
     case rig::SWEEP180: error = guard.sweep(now); break;
+    case rig::FEEDBACK180: error = guard.feedback(now); break;
     case rig::JOG: error = guard.jog(request.value, now); break;
     case rig::STOP: guard.stop(); disableImmediately(); break;
     case rig::CLEAR: error = guard.clear(); break;
@@ -103,7 +109,7 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(3), encoderEdge, CHANGE);
   motor.setMinPulseWidth(3);
   Serial.begin(115200);
-  Serial.println(F("{\"boot\":\"motor_jog_v4_disabled\"}"));
+  Serial.println(F("{\"boot\":\"motor_jog_v5_disabled\"}"));
 }
 void loop() {
   uint8_t budget = 32;

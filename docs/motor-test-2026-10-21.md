@@ -233,3 +233,18 @@ descriptive transfer ratios and ranges from a timestamped serial log. It
 deduplicates repeated endpoint packets and separates boots. Raw logs and endpoint
 records stay in ignored local data. The summary was checked against all three
 captured endpoint tuples and the independently calculated first-cycle values.
+
+## Encoder-targeted firmware prepared for the next test
+
+At the user's request to proceed, FEEDBACK180 was added as a separate explicit
+mode. It learns encoder polarity from five outward full steps, seeks logical
+-1200 encoder counts, then seeks the preserved encoder zero, with a +/-6-count
+(nominal +/-0.9-degree) endpoint tolerance appropriate to this initial full-step
+test. It uses finite motor bursts, endpoint observation, pulse/correction budgets,
+motor/encoder travel bounds, timeouts and automatic disable; see motor-jog.md.
+This applies bounded encoder feedback rather than a constant slip multiplier.
+
+Native feedback and previous motion tests passed; the Docker build used 16662
+flash bytes and 1018 static RAM bytes. The user confirmed motor power off and USB
+connected before the v5 upload, which AVRDUDE verified. Physical encoder-targeted
+results remain pending. The controller boots disabled; uploading does not arm it.

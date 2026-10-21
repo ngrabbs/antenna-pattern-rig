@@ -3,8 +3,9 @@
 `firmware/motor_jog` is a separate sketch from the encoder-only monitor. It uses
 Z STEP D4, Z DIR D7, active-low ENABLE D8 and the existing continuity-confirmed
 encoder D2/D3 takeoffs. It assumes a 200-full-step motor and a 600-cycle encoder
-mechanically coupled 1:1. It emits step commands and supervises the encoder;
-it does not apply automatic position corrections, home the axis or acquire RF data.
+mechanically coupled 1:1 for normal jog supervision. The separate FEEDBACK180
+test uses bounded encoder-based corrections. No absolute home reference or RF
+acquisition is implemented.
 
 The October 21 assembly was subsequently shown to use a rubber band around bare
 motor/encoder shafts, rather than a rigid 1:1 coupling. Normal PROBE/JOG tracking
@@ -58,6 +59,7 @@ Commands are uppercase, one per newline at 115200 baud:
 | `TICK` | Diagnostic: CONFIG 1 only, fresh ZERO required; command one +1.8-degree full step, observe for at least 1 second after the last pulse, then disable automatically |
 | `BELTTEST` | Diagnostic: CONFIG 1 and fresh ZERO only; 20 full steps (36 nominal motor degrees), record encoder without enforcing 1:1 tracking, observe for 1 second, disable automatically |
 | `SWEEP180` | Diagnostic: CONFIG 1 and fresh ZERO only; -100 full steps (nominal -180 motor degrees), settle, return to original step zero without rezeroing, settle, disable |
+| `FEEDBACK180` | Encoder-targeted test: CONFIG 1 and fresh ZERO only; learn encoder polarity, seek logical encoder -1200 counts then zero, settle, disable; bounded corrections |
 | `JOG -9` | Relative jog, up to 9 degrees magnitude; requires successful PROBE |
 | `STOP` or `!` | Immediately cancel step generation and disable coils; invalidate reference |
 | `CLEAR` | Clear a latched fault while disabled; does not arm |
@@ -85,7 +87,7 @@ no fault. Otherwise it disables with a following or settling fault. Inspect the
 recorded encoder displacement; this tolerance is a diagnostic acceptance bound,
 not a claim of pointing accuracy. Early STOP or any other fault can shorten the
 observation. Every attempt requires ARM and a fresh ZERO; no repeat is automatic.
-Firmware boot identification is now `motor_jog_v4_disabled`.
+Firmware boot identification is now `motor_jog_v5_disabled`.
 
 `BELTTEST` explicitly bypasses only expected motor-versus-encoder displacement
 checks for this unqualified elastic transmission. It never learns sign or enables
@@ -127,6 +129,55 @@ These are commanded-versus-encoder discrepancies, not independently measured pur
 slip: actual motor angle, effective pulley ratio, elastic storage and encoder
 accuracy remain part of the measurement. A variable discrepancy cannot be removed
 with one fixed calibration factor. A real home/index reference is not installed.
+
+## Encoder-targeted positioning test
+
+`FEEDBACK180` is a separate, explicit supervised mode (`diag=4`). It uses encoder
+readings as the working position reference, rather than a fixed step-to-angle
+correction. It requires CONFIG 1, ARM, and a settled ZERO. A first -5-full-step
+burst learns encoder polarity and must yield at least 12 counts of displacement.
+That burst is part of the outward leg, not a separate reference reset.
+
+The controller then seeks logical encoder -1200 counts (nominal -180 degrees),
+records the settled raw `out_enc`, and returns to the original encoder zero,
+recording `home_enc`. Zero is preserved through reversal. Near an endpoint it uses
+one full step per correction; away from it, bursts have at most five full steps.
+Each burst waits at least 350 ms after the final pulse and for 250 ms encoder
+quiet before deciding the next move. Within +/-6 encoder counts (nominal +/-0.9
+degree), it observes for two seconds before accepting the endpoint. This is an
+initial full-step tolerance, not encoder accuracy or a guarantee of post-disable
+position. The motor step counter need not return to zero when the encoder does.
+
+Bounds specific to this mode:
+
+- Motor position from start: -125 to +5 full steps (-225 to +9 nominal degrees).
+  Ensure clearance for the outward margin and a small correction past starting zero.
+- At most 140 commanded step increments per leg, including reversals, and at most
+  eight near-target correction requests per leg. A proposed move exceeding a
+  bound is rejected with a latched fault.
+- At most 90 seconds per leg; at most six seconds observation after a burst.
+- Encoder excursion limited to 210 nominal degrees from the preserved zero.
+- Two-second heartbeat, immediate STOP, invalid-transition checking and fault
+  latching remain active. Normal jog/other diagnostic limits remain unchanged.
+- After learning polarity, stalled bursts that each yield fewer than two counts
+  accumulate their commanded steps; ten such steps trip no-feedback protection.
+  Opposite response greater than
+  12 counts over a settled burst trips wrong-direction protection.
+
+Completion disables automatically and invalidates the reference. Faults or STOP
+do not automatically attempt a return. Telemetry `leg=1/2/3` denotes outward,
+return and completion; `enc_goal` is the signed logical target, `enc_sign` maps
+raw encoder to logical motor direction, `leg_steps` is the leg's consumed step
+budget, and `corrections` is the near-target request count. `out_steps` records
+the motor command position at the outward endpoint. `out_enc` and `home_enc`
+are raw counts, so use `enc_sign` when comparing to the logical target. `enc`
+continues to record relaxation after disable. Direction is a GPIO/viewing convention.
+
+Additional fault codes: 8 no usable/progressing feedback; 9 correction limit;
+10 wrong-direction encoder response. Reaching encoder targets validates only the
+supervised test under that setup. An encoder driven through a friction band does
+not independently establish actual antenna or motor angle. No fixed slip factor
+is applied and no absolute home switch/index is installed.
 
 ## Bounds and faults
 

@@ -4,10 +4,13 @@ Single-axis antenna-pattern turntable using an Arduino Uno, CNC Shield V3.0,
 Longruner 17HD48002H-22B stepper, and LPD3806-600BM-5G-24C incremental encoder.
 RF instrument: NanoVNA-F V2; other instrument models are not yet recorded.
 
-**Status:** supervised motor-jog firmware is implemented, Docker-built, uploaded
-and verified; powered motion is awaiting setup measurements. It boots disabled
-and requires explicit setup and commands. See [motor bring-up](docs/motor-jog.md).
-Automatic sweeps and RF instrument capture are not implemented. Earlier on
+**Status:** supervised motor firmware has completed powered 20-step and 180-degree
+outward/return diagnostics. Equal grooved pulleys and a rubber band transfer motion
+to the encoder; commanded motor angle and encoder angle disagree. See the
+[motor test results](docs/motor-test-2026-10-21.md). Encoder-targeted FEEDBACK180
+is implemented and model-tested; its physical validation is pending. Firmware boots
+disabled and requires explicit setup and commands. See [motor guide](docs/motor-jog.md).
+RF instrument capture and automatic antenna-pattern acquisition are not implemented. Earlier on
 2026-10-21 the encoder diagnostic was
 built in Docker, uploaded and verified, then tested by hand on the bare Uno:
 both directions counted, no invalid transitions were observed, and the final
@@ -19,12 +22,14 @@ read successfully in Docker: two complete flash images matched, and a HEX copy
 was validated. That readback used no write/erase commands. The original program
 is now preserved as private backups; the Uno currently runs `motor_jog`.
 EEPROM and restoration remain unverified; see [readback record](docs/readback-2026-10-21.md).
-The driver photo shows R250 sense resistors; DRV8825 identity is provisional and
-microstep/current settings remain unconfirmed. No license has been selected yet.
+The driver photo shows R250 sense resistors; DRV8825 identity is provisional.
+The user measured 0.993 V at the adjustment screw, approximately 12 V at VMOT,
+and low mode inputs with no jumpers (full steps). No license has been selected yet.
 
-For the initial motor check, the user reports the driver in Z with no mode
-jumpers (full step) and the encoder mechanically coupled 1:1. Measured VREF and
-motor-supply voltage are still required before arming. Software configuration is
+The driver is in Z with no mode jumpers (full step); equal-size grooved pulleys
+give a reported nominal 1:1 ratio, with elastic transfer and slip unqualified.
+The earlier rigid-coupling assumption is superseded by the assembly photo and
+test results. Software configuration is
 `CONFIG 1`. The motion build uses the GPLv3/commercial AccelStepper 1.64.0
 dependency noted in the motor guide.
 
