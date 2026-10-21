@@ -104,3 +104,20 @@ pointing. Do not fit a calibration ratio to this slipping-band run. Replace the
 friction band with a positive mechanical connection before positioning tests.
 For final antenna angle, sensing the turntable output also captures transmission
 backlash or slip that a motor-shaft encoder cannot see.
+
+## Repeat runs and equal grooved pulleys
+
+The second BELTTEST at approximately 19:16 UTC completed the same 20 commanded
+steps, then disabled with `done=2`, `fault=0`, `bad=0`. A post-disable reading was
++224 counts (33.6 degrees). The user subsequently reported installing pulleys
+locked to the shafts, with equal belt-running sizes, grooves rather than teeth,
+and no observed rubber-band slip. This establishes a reported nominal 1:1 ratio,
+not independently measured pitch diameters or a positive belt engagement.
+
+The third BELTTEST, after that clarification, at approximately 19:18 UTC completed
+20 commanded steps and disabled with `done=3`, `fault=0`, `bad=0`. The stable
+post-disable reading was +230 counts (34.5 nominal encoder degrees), versus 240
+counts (36 degrees) expected for ideal 1:1 transfer. The 10-count/1.5-degree
+difference does not by itself distinguish elastic lag, effective pulley ratio,
+residual slip, motor position error or another source. Neither run is a calibrated
+pointing-accuracy result. Raw logs for all three runs are retained privately.
