@@ -14,7 +14,7 @@ import time
 import serial
 
 
-ALLOWED = re.compile(r"(?:STATUS|CONFIG (?:1|2|4|8|16|32)|ARM|ZERO|PROBE|JOG [+-]?(?:\d+(?:\.\d*)?|\.\d+)|STOP|CLEAR|!)\Z")
+ALLOWED = re.compile(r"(?:STATUS|CONFIG (?:1|2|4|8|16|32)|ARM|ZERO|PROBE|TICK|JOG [+-]?(?:\d+(?:\.\d*)?|\.\d+)|STOP|CLEAR|!)\Z")
 
 
 def utc_now():

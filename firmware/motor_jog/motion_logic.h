@@ -6,7 +6,7 @@
 #include <math.h>
 
 namespace rig {
-enum Command { INVALID, CONFIG, ARM, ZERO, PROBE, JOG, STOP, CLEAR, STATUS, PING };
+enum Command { INVALID, CONFIG, ARM, ZERO, PROBE, JOG, STOP, CLEAR, STATUS, PING, TICK };
 struct Request { Command command; double value; };
 inline Request parse(const char* input) {
   char text[64];
@@ -15,9 +15,9 @@ inline Request parse(const char* input) {
   char* word = strtok(text, " \t");
   if (!word) return {INVALID, 0};
   Command c = INVALID;
-  const char* names[] = {"CONFIG", "ARM", "ZERO", "PROBE", "JOG", "STOP", "CLEAR", "STATUS", "PING"};
-  const Command codes[] = {CONFIG, ARM, ZERO, PROBE, JOG, STOP, CLEAR, STATUS, PING};
-  for (uint8_t i = 0; i < 9; ++i) if (!strcmp(word, names[i])) c = codes[i];
+  const char* names[] = {"CONFIG", "ARM", "ZERO", "PROBE", "JOG", "STOP", "CLEAR", "STATUS", "PING", "TICK"};
+  const Command codes[] = {CONFIG, ARM, ZERO, PROBE, JOG, STOP, CLEAR, STATUS, PING, TICK};
+  for (uint8_t i = 0; i < 10; ++i) if (!strcmp(word, names[i])) c = codes[i];
   char* arg = strtok(NULL, " \t");
   if (c == CONFIG || c == JOG) {
     if (!arg || strtok(NULL, " \t")) return {INVALID, 0};
@@ -86,8 +86,14 @@ class Guard {
   }
   const char* probe(uint32_t now) {
     if (!armed || !referenced || phase != HOLDING || sign || position != 0) return "zero_before_probe";
-    probing = true;
+    probing = true; singleStepTest = false;
     return begin(5L * microsteps, now);  // Exactly 9 nominal degrees at any subdivision.
+  }
+  const char* tick(uint32_t now) {
+    if (!armed || !referenced || phase != HOLDING || sign || position != 0) return "zero_before_tick";
+    if (microsteps != 1) return "tick_requires_full_steps";
+    probing = true; singleStepTest = true;
+    return begin(1, now);  // One full step; observe for one second, then disable.
   }
   const char* jog(double degrees, uint32_t now) {
     if (!armed || !referenced || !sign || phase != HOLDING) return "probe_first_or_busy";
@@ -96,7 +102,7 @@ class Guard {
     if (!delta) return "below_step_resolution";
     int32_t next = position + delta;
     if (fabs(next / stepsPerDegree()) > 45.001f) return "target_limit";
-    probing = false;
+    probing = false; singleStepTest = false;
     return begin(next, now);
   }
   void stop(Fault reason = OK) {
@@ -124,8 +130,10 @@ class Guard {
       if (phase == MOVING && motorDone) { phase = SETTLING; settleTime = now; }
       if (phase == SETTLING) {
         if ((uint32_t)(now - settleTime) > 1500) { stop(SETTLE_TIMEOUT); return; }
-        if ((uint32_t)(now - settleTime) >= 250 && (uint32_t)(now - lastChange) >= 250) {
+        const uint32_t observationTime = singleStepTest ? 1000 : 250;
+        if ((uint32_t)(now - settleTime) >= observationTime && (uint32_t)(now - lastChange) >= 250) {
           if (fabs(actual - expectedCounts(target)) > 6.0f) { stop(FOLLOWING); return; }
+          if (singleStepTest) { ++completed; stop(); return; }
           if (probing) sign = relative > 0 ? 1 : -1;
           phase = HOLDING; ++completed;
         }
@@ -136,6 +144,7 @@ class Guard {
   }
  private:
   bool probing = false;
+  bool singleStepTest = false;
   uint32_t heartbeat = 0, armTime = 0, lastChange = 0, referenceInvalid = 0;
   uint32_t moveTime = 0, settleTime = 0;
   int32_t previousRaw = 0;

@@ -32,6 +32,30 @@ int main() {
   assert(parse("CONFIG 8").value == 8);
   assert(parse("JOG -9").value == -9);
   assert(parse("STOP").command == STOP);
+  assert(parse("TICK").command == TICK);
+  assert(parse("TICK 1").command == INVALID);
+  for (int polarity : {-1, 1}) {
+    Guard g; ready(g); assert(!g.tick(700)); assert(g.target == 1);
+    g.ping(1000); g.update(1000, 0, 0, 1, true);
+    assert(g.phase == SETTLING && g.armed);
+    g.ping(1500); g.update(1500, 12 * polarity, 0, 1, true);
+    assert(g.armed && g.completed == 0);
+    g.ping(1999); g.update(1999, 12 * polarity, 0, 1, true);
+    assert(g.armed);
+    g.ping(2000); g.update(2000, 12 * polarity, 0, 1, true);
+    assert(!g.armed && g.phase == DISABLED && g.completed == 1 && !g.referenced && !g.sign);
+    assert(g.tick(2001));  // Never repeat automatically or reuse a reference.
+  }
+  { Guard g; ready(g); assert(!g.tick(700));
+    g.ping(1000); g.update(1000, 0, 0, 1, true);
+    g.ping(1999); g.update(1999, 0, 0, 1, true); assert(g.armed);
+    g.ping(2000); g.update(2000, 0, 0, 1, true);
+    assert(!g.armed && g.fault == FOLLOWING && g.completed == 0); }
+  { Guard g; assert(g.tick(0)); ready(g, 8); assert(g.tick(700)); }
+  { Guard g; ready(g); assert(!g.tick(700));
+    g.update(2801, 0, 0, 1, true); assert(!g.armed && g.fault == COMM_TIMEOUT); }
+  { Guard g; ready(g); assert(!g.tick(700));
+    g.ping(800); g.update(800, 0, 1, 1, true); assert(!g.armed && g.fault == BAD_ENCODER); }
   for (int polarity : {-1, 1}) for (int subdivision : {1, 8, 32}) {
     Guard g; ready(g, subdivision);
     assert(g.jog(9, 700));  // A successful direction probe is required.

@@ -50,6 +50,7 @@ Commands are uppercase, one per newline at 115200 baud:
 | `ARM` | Energize coils; does not emit step pulses; requires CONFIG and no fault |
 | `ZERO` | Set a relative reference after >=500 ms armed and >=250 ms with no encoder change |
 | `PROBE` | One +9-degree nominal move to determine encoder polarity; requires a fresh ZERO |
+| `TICK` | Diagnostic: CONFIG 1 only, fresh ZERO required; command one +1.8-degree full step, observe for at least 1 second after the last pulse, then disable automatically |
 | `JOG -9` | Relative jog, up to 9 degrees magnitude; requires successful PROBE |
 | `STOP` or `!` | Immediately cancel step generation and disable coils; invalidate reference |
 | `CLEAR` | Clear a latched fault while disabled; does not arm |
@@ -66,6 +67,18 @@ Telemetry is newline JSON about four times per second. `state`: 0 disabled,
 and by learned `sign` for the command-direction convention after a successful
 probe. Before ZERO or PROBE those conventions are not established. Status is live
 only when its timestamp/age is current.
+
+`TICK` is a bounded diagnostic for the October 21 bring-up discrepancy. It does
+not learn polarity or qualify the rig for jogs. It keeps the ordinary 24-count
+moving error bound, heartbeat, invalid-transition and travel checks. After the
+single pulse it observes for at least 1000 ms and requires 250 ms encoder quiet;
+the existing 1500 ms settling timeout still applies. A displacement magnitude
+within 6 counts of the expected 12 counts increments `done` and disables with
+no fault. Otherwise it disables with a following or settling fault. Inspect the
+recorded encoder displacement; this tolerance is a diagnostic acceptance bound,
+not a claim of pointing accuracy. Early STOP or any other fault can shorten the
+observation. Every attempt requires ARM and a fresh ZERO; no repeat is automatic.
+Firmware boot identification is now `motor_jog_v2_disabled`.
 
 ## Bounds and faults
 
