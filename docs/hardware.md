@@ -4,12 +4,12 @@
 
 | Part | Known | Still to establish |
 | --- | --- | --- |
-| Arduino Uno | Original rotor flash backed up; encoder diagnostic now installed and upload-verified | Original source, EEPROM calibration, restoration |
-| CNC shield | V3.0 | Clone pinout, populated axis, A-axis clone jumpers |
+| Arduino Uno | Original rotor flash backed up; motor-jog firmware now installed and upload-verified | Original source, EEPROM calibration, restoration |
+| CNC shield | V3.0; user reports DRV8825 installed in Z for motor bring-up | Z pinout/orientation check, measured powered behavior |
 | Driver | Purple carrier; user reads V8825; photo shows two R250 sense resistors | Confirm full chip identity, measured VREF/current limit, microstep jumpers |
 | Motor | Longruner 17HD48002H-22B | Confirm its own label/ratings and coil pairing |
 | Encoder | LPD3806-600BM-5G-24C; basic 5 V hand-turn test completed on bare Uno | Precisely indexed counts/revolution, noise immunity, mounted repeatability |
-| Coupling | Printed motor/encoder mount under construction | Shaft alignment, stiffness, slip, backlash |
+| Coupling | User confirms mechanical 1:1 motor/encoder coupling | Shaft alignment, stiffness, slip, backlash |
 
 A Zyltech sheet for the same motor part number lists 1.8 degrees, 1.7 A/phase,
 0.59 N m holding torque and 5% step accuracy. Treat this as supporting evidence,

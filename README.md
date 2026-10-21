@@ -4,8 +4,11 @@ Single-axis antenna-pattern turntable using an Arduino Uno, CNC Shield V3.0,
 Longruner 17HD48002H-22B stepper, and LPD3806-600BM-5G-24C incremental encoder.
 RF instrument: NanoVNA-F V2; other instrument models are not yet recorded.
 
-**Status:** planning and encoder diagnostic firmware. No motor-control or RF
-instrument automation is implemented yet. On 2026-10-21 the encoder diagnostic was
+**Status:** supervised motor-jog firmware is implemented, Docker-built, uploaded
+and verified; powered motion is awaiting setup measurements. It boots disabled
+and requires explicit setup and commands. See [motor bring-up](docs/motor-jog.md).
+Automatic sweeps and RF instrument capture are not implemented. Earlier on
+2026-10-21 the encoder diagnostic was
 built in Docker, uploaded and verified, then tested by hand on the bare Uno:
 both directions counted, no invalid transitions were observed, and the final
 10-second stationary window showed no count drift. The manually indexed turn
@@ -14,10 +17,16 @@ accuracy remain unverified. See [first encoder test](docs/encoder-test-2026-10-2
 Before that upload, the existing Uno rotor firmware was
 read successfully in Docker: two complete flash images matched, and a HEX copy
 was validated. That readback used no write/erase commands. The original program
-is now preserved as private backups; the Uno currently runs the encoder diagnostic.
+is now preserved as private backups; the Uno currently runs `motor_jog`.
 EEPROM and restoration remain unverified; see [readback record](docs/readback-2026-10-21.md).
 The driver photo shows R250 sense resistors; DRV8825 identity is provisional and
 microstep/current settings remain unconfirmed. No license has been selected yet.
+
+For the initial motor check, the user reports the driver in Z with no mode
+jumpers (full step) and the encoder mechanically coupled 1:1. Measured VREF and
+motor-supply voltage are still required before arming. Software configuration is
+`CONFIG 1`. The motion build uses the GPLv3/commercial AccelStepper 1.64.0
+dependency noted in the motor guide.
 
 The subsequent [encoder-through-shield test](docs/encoder-shield-test-2026-10-21.md)
 passed a basic functional check after continuity-confirmed D2/D3 takeoffs were
@@ -60,8 +69,11 @@ parts. Encoder line-spacing accuracy has not been established.
 - [Sources](docs/sources.md): component and measurement references.
 - [Validation](docs/validation.md): tests performed and remaining hardware checks.
 - `firmware/encoder_monitor/`: x4 encoder diagnostic; no step pulses.
+- `firmware/motor_jog/`: bounded step commands with encoder supervision; see [protocol](docs/motor-jog.md).
 - `tools/geometry.py`: offline resolution and alignment calculations; no hardware I/O.
 - `tools/capture_encoder.py`: serial capture and live JSON status; pyserial in Docker.
+- `tools/motion_session.py`, `tools/motion_request.py`: persistent serial control,
+  fresh-status heartbeats and explicit requests, with no automatic arming/motion.
 - `data/run-template.json`: metadata template, with unknowns left null.
 
 ## Offline calculations
@@ -74,6 +86,8 @@ python3 tools/geometry.py --microsteps 16 --motor-ratio 5 --encoder-ratio 1
 python3 -m unittest discover -s tests -v
 c++ -std=c++11 -Wall -Wextra -pedantic tests/quadrature_test.cpp -o /tmp/antenna-quadrature-test
 /tmp/antenna-quadrature-test
+c++ -std=c++11 -Wall -Wextra -pedantic tests/motion_test.cpp -o /tmp/antenna-motion-test
+/tmp/antenna-motion-test
 ```
 
 Both ratios mean **shaft revolutions per table revolution**, separately for the
@@ -82,13 +96,14 @@ the encoder is mounted directly on the output table.
 
 ## Next steps
 
-1. Preserve the verified flash backups; determine whether EEPROM contains calibration
-   and validate restoration before replacing the sole working firmware.
+1. Preserve the verified original rotor flash backups; EEPROM calibration and
+   restoration remain unverified.
 2. Record driver chip markings, jumper settings, supply, encoder label/wiring,
    coupling arrangement, and CAD revision.
 3. Confirm 2400 signed encoder counts per mechanical revolution in x4 mode.
 4. Validate angle repeatability with the final load and coax attached.
-5. Implement bounded motor motion, reference/zero handling, stop and fault paths.
+5. Validate the implemented bounded motor jogs, zero/probe, stop and fault paths
+   against the actual driver/encoder and motor supply before automated sweeps.
 6. Add instrument capture after motion/encoder acceptance checks pass.
 
 Do not interpret a software zero as an absolute encoder reference. Power loss,

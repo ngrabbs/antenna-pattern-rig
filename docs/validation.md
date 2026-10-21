@@ -59,3 +59,18 @@ Across 1124 parsed samples, invalid transitions stayed zero and timestamps were
 strictly increasing. The final 10 seconds stayed at +3 counts. All driver sockets
 were empty, the EN/GND shunt was removed, and motor power was disconnected.
 See [shield test record](encoder-shield-test-2026-10-21.md).
+
+## Motor-jog firmware baseline, 2026-10-21
+
+Native C++11 checks passed for explicit configuration/arming/reference interlocks,
+both encoder polarities, subdivisions 1/8/32, round-trip moves, planned travel,
+stall/following faults, invalid transitions, moving/settling timeouts, heartbeat
+timeout and wraparound, fault latching and serial framing/emergency stop handling.
+The test source is `tests/motion_test.cpp`.
+
+Docker build using Arduino AVR core 1.8.8 and AccelStepper 1.64.0 passed: 13124
+flash bytes and 730 bytes static RAM. AVRDUDE verified the application upload.
+Live telemetry showed boot disabled, explicit `CONFIG 1` accepted, and a `JOG 1`
+request rejected while disarmed, with zero commanded steps and no fault.
+Actual supply/VREF measurements and powered movements remain pending. Unit-model
+tests and a verified upload do not establish the physical motion/stop behavior.

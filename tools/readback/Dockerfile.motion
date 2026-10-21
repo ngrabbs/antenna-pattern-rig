@@ -1,0 +1,2 @@
+FROM antenna-rig-build:20261021
+RUN arduino-cli lib install AccelStepper@1.64
