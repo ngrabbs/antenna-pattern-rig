@@ -5,9 +5,12 @@ Longruner 17HD48002H-22B stepper, and LPD3806-600BM-5G-24C incremental encoder.
 RF instrument: NanoVNA-F V2; other instrument models are not yet recorded.
 
 **Status:** planning and encoder diagnostic firmware. No motor-control or RF
-instrument automation is implemented yet. No hardware has been flashed or tested.
-The Uno already contains satellite-rotor firmware; preserve it before uploading
-anything. Purple driver modules are present but their IC model and microstep
+instrument automation is implemented yet. The encoder diagnostic has not been
+uploaded or tested on hardware. On 2026-10-21 the existing Uno rotor firmware was
+read successfully in Docker: two complete flash images matched, and a HEX copy
+was validated. No write/erase commands were issued. EEPROM and restoration remain
+unverified; see [readback record](docs/readback-2026-10-21.md). Purple driver modules
+are present but their IC model and microstep
 configuration are unconfirmed. No license has been selected yet.
 
 ## Starting resolution
@@ -64,7 +67,8 @@ the encoder is mounted directly on the output table.
 
 ## Next steps
 
-1. Back up the existing rotor firmware and any calibration/configuration.
+1. Preserve the verified flash backups; determine whether EEPROM contains calibration
+   and validate restoration before replacing the sole working firmware.
 2. Record driver chip markings, jumper settings, supply, encoder label/wiring,
    coupling arrangement, and CAD revision.
 3. Confirm 2400 signed encoder counts per mechanical revolution in x4 mode.

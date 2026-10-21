@@ -28,4 +28,12 @@ until reset. Reset restarts the session and loses the position reference.
 **Not verified:** physical encoder counts/revolution, output voltages, counting
 under motor electrical noise, driver identity, load-dependent motion, shield
 wiring, absolute angle, repeatability, calibration, backup/restore of the existing
-firmware, motor control, or RF capture. No board was connected, flashed or reset.
+  firmware, motor control, or RF capture. No board was connected, flashed or reset.
+
+## Subsequent hardware readback, 2026-10-21
+
+After the software-only checks above, the Uno was connected on a Linux host.
+Docker AVRDUDE identified ATmega328P and read the full 32768-byte flash twice;
+the images matched. Intel HEX was independently decoded and matched every byte.
+See [readback record](readback-2026-10-21.md). This does not validate the diagnostic
+sketch, motion, encoder wiring, EEPROM contents, or restoration.

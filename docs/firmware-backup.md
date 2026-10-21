@@ -1,6 +1,9 @@
 # Preserve the installed satellite-rotor firmware
 
-No hardware read, write, reset, or upload has been performed for this project.
+Flash readback was completed on 2026-10-21; see [the readback record](readback-2026-10-21.md).
+The bootloader connection reset the Uno, with motor power disconnected. No
+write/erase commands were issued. The procedure below remains general guidance;
+EEPROM and restoration have not been verified.
 
 An Uno normally stores compiled machine code, not the original .ino source.
 Readback may preserve a restorable executable, but not the original comments,
