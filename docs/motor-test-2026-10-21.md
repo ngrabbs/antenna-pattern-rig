@@ -121,3 +121,33 @@ counts (36 degrees) expected for ideal 1:1 transfer. The 10-count/1.5-degree
 difference does not by itself distinguish elastic lag, effective pulley ratio,
 residual slip, motor position error or another source. Neither run is a calibrated
 pointing-accuracy result. Raw logs for all three runs are retained privately.
+
+## Additional commanded-increment consistency checks
+
+At the user's request, three more positive-direction BELTTEST sequences were run
+with the reported equal grooved pulleys. Each used ARM, settled ZERO, the fixed
+20-step command, automatic disable and a reading two seconds after observing
+disable. Each sequence started from its current location, so this checks repeated
+commanded increments at different positions, not return-to-the-same-target
+positioning repeatability or reversal hysteresis.
+
+| Additional trial | First disabled count | Count two seconds later | Encoder angle two seconds later |
+| --- | ---: | ---: | ---: |
+| 1 (`done=4`) | 211 | 211 | 31.65 degrees |
+| 2 (`done=5`) | 210 | 211 | 31.65 degrees |
+| 3 (`done=6`) | 257 | 258 | 38.70 degrees |
+
+All reached 20 software-counted steps and disabled with fault=0 and bad=0.
+Completion is not a tracking pass. The settled spread is 47 encoder counts,
+nominally 7.05 degrees, compared with 240 counts / 36 degrees expected under
+ideal 1:1 transfer. The first two matching readings do not establish overall
+consistency; the third disproves that provisional impression. Further identical
+repeats were stopped rather than selecting only matching runs.
+
+These results are not satisfactory for fine antenna positioning. They do not
+isolate the cause: motor angle was not independently measured, and an equal-size
+grooved friction transmission is not proof of a constant effective ratio or
+absence of creep. Independent reference marks/angle measurements on both shafts,
+or a positive mechanical transmission, are needed before calibration or feedback
+qualification. Raw telemetry and per-trial timestamps/states are retained in
+ignored local data; the controller was left disabled after trial 3.
