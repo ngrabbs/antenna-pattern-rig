@@ -8,3 +8,7 @@ backups/
 *.eep
 *.bin
 data/local/
+
+# Generated report previews and visual checks
+output/pdf/
+tmp/pdfs/

@@ -1,0 +1,23 @@
+pdf-engine: lualatex
+number-sections: false
+toc: false
+from: markdown+task_lists+pipe_tables+yaml_metadata_block+raw_html
+variables:
+  documentclass: article
+  fontsize: 10pt
+  colorlinks: true
+  linkcolor: LabBlue
+  urlcolor: LabBlue
+  geometry:
+    - letterpaper
+    - top=0.72in
+    - bottom=0.70in
+    - left=0.72in
+    - right=0.72in
+    - headheight=15pt
+    - headsep=0.22in
+    - footskip=0.32in
+metadata:
+  mainfont: Latin Modern Roman
+  sansfont: Latin Modern Sans
+  monofont: Latin Modern Mono

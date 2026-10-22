@@ -46,6 +46,15 @@ invalid transitions, and no final stationary drift. The initial photo-based
 takeoff instructions are superseded by the measured connections documented in
 [hardware notes](docs/hardware.md#actual-shield-takeoffs-continuity-check-2026-10-21).
 
+## Guided lab worksheet and PDF reports
+
+Use the [antenna lab worksheet](templates/antenna-lab/worksheet.md) to work through
+scope, inspection, VNA matching, positioning, range setup, RF validation, pattern
+acquisition, repeatability and reviewed findings. Optional polarization/gain modules
+are separate. [Instructions and one-command Pandoc export](templates/antenna-lab/README.md)
+include a concise report template and a dated current-rig profile. Copy a template
+for each session; leave the master blank.
+
 ## Starting resolution
 
 Assuming 200 full motor steps/revolution, direct drive, and 600 encoder cycles per
